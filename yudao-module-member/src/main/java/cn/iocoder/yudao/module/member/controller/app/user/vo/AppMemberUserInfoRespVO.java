@@ -17,6 +17,9 @@ public class AppMemberUserInfoRespVO {
     @Schema(description = "用户昵称", requiredMode = Schema.RequiredMode.REQUIRED, example = "芋艿")
     private String nickname;
 
+    @Schema(description = "用户真实名字", requiredMode = Schema.RequiredMode.REQUIRED, example = "李四")
+    private String name;
+
     @Schema(description = "用户头像", requiredMode = Schema.RequiredMode.REQUIRED, example = "https://www.iocoder.cn/xxx.png")
     private String avatar;
 
@@ -25,6 +28,27 @@ public class AppMemberUserInfoRespVO {
 
     @Schema(description = "用户性别", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Integer sex;
+
+    @Schema(description = "用户身份证号", requiredMode = Schema.RequiredMode.REQUIRED, example = "130101199003074919")
+    private String idCard;
+
+    @Schema(description = "用户家庭角色", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
+    private Integer familyRole;
+
+    @Schema(description = "用户联系地址", requiredMode = Schema.RequiredMode.REQUIRED, example = "北京市海淀区")
+    private String address;
+
+    @Schema(description = "用户所属学校", requiredMode = Schema.RequiredMode.REQUIRED, example = "北京大学")
+    private String school;
+
+    @Schema(description = "用户血型", requiredMode = Schema.RequiredMode.REQUIRED, example = "A")
+    private String bloodType;
+
+    @Schema(description = "用户身高", requiredMode = Schema.RequiredMode.REQUIRED, example = "180")
+    private Integer height;
+
+    @Schema(description = "用户体重", requiredMode = Schema.RequiredMode.REQUIRED, example = "70")
+    private Integer weight;
 
     @Schema(description = "积分", requiredMode = Schema.RequiredMode.REQUIRED, example = "10")
     private Integer point;
