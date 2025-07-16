@@ -168,4 +168,10 @@ public interface ErrorCodeConstants {
     // ========== 站内信发送 1-002-028-000 ==========
     ErrorCode NOTIFY_SEND_TEMPLATE_PARAM_MISS = new ErrorCode(1_002_028_000, "模板参数({})缺失");
 
+    // ========== 轮播图 1-002-029-000 ==========
+    ErrorCode CAROUSEL_NOT_EXISTS = new ErrorCode(1_002_029_000, "轮播图不存在");
+
+    // ========== 政策配置 1-002-030-000 ==========
+    ErrorCode POLICY_NOT_EXISTS = new ErrorCode(1_002_030_000, "政策配置不存在");
+
 }
