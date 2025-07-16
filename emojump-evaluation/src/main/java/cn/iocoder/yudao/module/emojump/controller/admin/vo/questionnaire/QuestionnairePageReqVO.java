@@ -1,0 +1,32 @@
+package cn.iocoder.yudao.module.emojump.controller.admin.vo.questionnaire;
+
+import cn.iocoder.yudao.framework.common.pojo.PageParam;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+
+import java.time.LocalDateTime;
+
+@Schema(description = "管理后台 - 问卷分页 Request VO")
+@Data
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
+public class QuestionnairePageReqVO extends PageParam {
+
+    @Schema(description = "问卷标题", example = "儿童发展问卷")
+    private String title;
+
+    @Schema(description = "问卷状态", example = "1")
+    private Integer status;
+
+    @Schema(description = "问卷类型", example = "1")
+    private Integer type;
+
+    @Schema(description = "是否开放", example = "true")
+    private Boolean isOpen;
+
+    @Schema(description = "创建时间")
+    private LocalDateTime[] createTime;
+
+} 
