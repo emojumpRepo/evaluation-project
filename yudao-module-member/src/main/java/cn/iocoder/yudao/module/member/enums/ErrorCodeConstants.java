@@ -55,4 +55,10 @@ public interface ErrorCodeConstants {
     ErrorCode GROUP_NOT_EXISTS = new ErrorCode(1_004_012_000, "用户分组不存在");
     ErrorCode GROUP_HAS_USER = new ErrorCode(1_004_012_001, "用户分组下存在用户，无法删除");
 
+    //========== 轮播图 1-004-013-000 ==========
+    ErrorCode CAROUSEL_NOT_EXISTS = new ErrorCode(1_004_013_000, "轮播图不存在");
+
+    //========== 政策配置 1-004-014-000 ==========
+    ErrorCode POLICY_NOT_EXISTS = new ErrorCode(1_004_014_000, "政策配置不存在");
+
 }
