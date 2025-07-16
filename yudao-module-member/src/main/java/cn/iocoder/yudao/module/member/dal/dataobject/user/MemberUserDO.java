@@ -8,6 +8,7 @@ import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
 import cn.iocoder.yudao.module.member.dal.dataobject.group.MemberGroupDO;
 import cn.iocoder.yudao.module.member.dal.dataobject.level.MemberLevelDO;
 import cn.iocoder.yudao.module.system.enums.common.SexEnum;
+import cn.iocoder.yudao.module.member.enums.MemberFamilyRoleTypeEnum;
 import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -142,4 +143,40 @@ public class MemberUserDO extends TenantBaseDO {
      */
     private Long groupId;
 
+    /**
+     * 用户身份证号
+     */
+    private String idCard;
+
+    /**
+     * 用户家庭角色
+     *
+     * 枚举 {@link MemberFamilyRoleTypeEnum}
+     */
+    private Integer familyRole;
+
+    /**
+     * 用户联系地址
+     */
+    private String address;
+
+    /**
+     * 用户所属学校
+     */
+    private String school;
+
+    /**
+     * 用户血型
+     */
+    private String bloodType;
+
+    /**
+     * 用户身高
+     */
+    private Integer height;
+
+    /**
+     * 用户体重
+     */
+    private Integer weight;
 }

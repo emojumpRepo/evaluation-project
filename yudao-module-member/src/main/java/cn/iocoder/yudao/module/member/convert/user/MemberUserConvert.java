@@ -12,7 +12,6 @@ import cn.iocoder.yudao.module.member.dal.dataobject.tag.MemberTagDO;
 import cn.iocoder.yudao.module.member.dal.dataobject.user.MemberUserDO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.Mappings;
 import org.mapstruct.factory.Mappers;
 
 import java.util.List;
@@ -28,13 +27,27 @@ public interface MemberUserConvert {
 
     AppMemberUserInfoRespVO convert(MemberUserDO bean);
 
-
-    @Mappings({
-            @Mapping(source = "level", target = "level"),
-            @Mapping(source = "bean.id", target = "id"),
-            @Mapping(source = "bean.experience", target = "experience")
-    })
-    AppMemberUserInfoRespVO convert(MemberUserDO bean, MemberLevelDO level);
+    // 手动实现转换方法，避免字段名冲突
+    default AppMemberUserInfoRespVO convert(MemberUserDO bean, MemberLevelDO level) {
+        if (bean == null) {
+            return null;
+        }
+        
+        // 首先转换用户基本信息
+        AppMemberUserInfoRespVO result = convert(bean);
+        
+        // 然后设置等级信息
+        if (level != null) {
+            AppMemberUserInfoRespVO.Level levelVO = new AppMemberUserInfoRespVO.Level();
+            levelVO.setId(level.getId());
+            levelVO.setName(level.getName());
+            levelVO.setLevel(level.getLevel());
+            levelVO.setIcon(level.getIcon());
+            result.setLevel(levelVO);
+        }
+        
+        return result;
+    }
 
     MemberUserRespDTO convert2(MemberUserDO bean);
 
