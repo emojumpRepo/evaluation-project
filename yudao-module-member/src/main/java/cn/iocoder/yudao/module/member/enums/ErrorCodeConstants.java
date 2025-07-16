@@ -58,4 +58,7 @@ public interface ErrorCodeConstants {
     //========== 宝宝信息 1-004-013-000 ==========
     ErrorCode BABY_NOT_EXISTS = new ErrorCode(1_004_013_000, "宝宝信息不存在");
 
+    //========== 会员文章 1-004-014-000 ==========
+    ErrorCode ARTICLE_NOT_EXISTS = new ErrorCode(1_004_014_000, "会员文章不存在");
+
 }
