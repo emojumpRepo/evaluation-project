@@ -15,6 +15,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.annotation.security.PermitAll;
 import javax.validation.Valid;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
@@ -31,6 +32,7 @@ public class AppMemberArticleController {
 
     @GetMapping("/page")
     @Operation(summary = "获得会员文章分页")
+    @PermitAll
     public CommonResult<PageResult<AppMemberArticleRespVO>> getArticlePage(@Valid AppMemberArticlePageReqVO pageVO) {
         PageResult<MemberArticleDO> pageResult = articleService.getAppArticlePage(pageVO);
         return success(MemberArticleConvert.INSTANCE.convertAppPage(pageResult));
@@ -39,6 +41,7 @@ public class AppMemberArticleController {
     @GetMapping("/get")
     @Operation(summary = "获得会员文章详情")
     @Parameter(name = "id", description = "编号", required = true, example = "1024")
+    @PermitAll
     public CommonResult<AppMemberArticleRespVO> getArticle(@RequestParam("id") Long id) {
         MemberArticleDO article = articleService.getAppArticle(id);
         return success(MemberArticleConvert.INSTANCE.convertApp(article));
