@@ -1,4 +1,4 @@
-package cn.iocoder.yudao.module.member.controller.admin.article.vo;
+package cn.iocoder.yudao.module.emojump.controller.admin.article.vo;
 
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -15,7 +15,7 @@ import static cn.iocoder.yudao.framework.common.util.date.DateUtils.FORMAT_YEAR_
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public class MemberArticlePageReqVO extends PageParam {
+public class ArticlePageReqVO extends PageParam {
 
     @Schema(description = "文章标题", example = "Spring Boot")
     private String title;

@@ -1,4 +1,4 @@
-package cn.iocoder.yudao.module.member.controller.app.article.vo;
+package cn.iocoder.yudao.module.emojump.controller.app.article.vo;
 
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -10,7 +10,7 @@ import lombok.ToString;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public class AppMemberArticlePageReqVO extends PageParam {
+public class AppArticlePageReqVO extends PageParam {
 
     @Schema(description = "文章标题", example = "Spring Boot")
     private String title;

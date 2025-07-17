@@ -1,4 +1,4 @@
-package cn.iocoder.yudao.module.member.dal.dataobject.article;
+package cn.iocoder.yudao.module.emojump.dal.dataobject.article;
 
 import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
 import com.baomidou.mybatisplus.annotation.KeySequence;
@@ -13,13 +13,13 @@ import java.time.LocalDateTime;
  *
  * @author 芋道源码
  */
-@TableName(value = "member_article", autoResultMap = true)
+@TableName(value = "emojump_article", autoResultMap = true)
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MemberArticleDO extends TenantBaseDO {
+public class ArticleDO extends TenantBaseDO {
 
     /**
      * 文章ID

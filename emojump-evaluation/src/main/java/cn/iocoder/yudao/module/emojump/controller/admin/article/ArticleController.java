@@ -1,11 +1,11 @@
-package cn.iocoder.yudao.module.member.controller.admin.article;
+package cn.iocoder.yudao.module.emojump.controller.admin.article;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
-import cn.iocoder.yudao.module.member.controller.admin.article.vo.*;
-import cn.iocoder.yudao.module.member.convert.article.MemberArticleConvert;
-import cn.iocoder.yudao.module.member.dal.dataobject.article.MemberArticleDO;
-import cn.iocoder.yudao.module.member.service.article.MemberArticleService;
+import cn.iocoder.yudao.module.emojump.controller.admin.article.vo.*;
+import cn.iocoder.yudao.module.emojump.convert.article.ArticleConvert;
+import cn.iocoder.yudao.module.emojump.dal.dataobject.article.ArticleDO;
+import cn.iocoder.yudao.module.emojump.service.article.ArticleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,24 +20,24 @@ import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 
 @Tag(name = "管理后台 - 会员文章")
 @RestController
-@RequestMapping("/member/article")
+@RequestMapping("/emojump/article")
 @Validated
-public class MemberArticleController {
+public class ArticleController {
 
     @Resource
-    private MemberArticleService articleService;
+    private ArticleService articleService;
 
     @PostMapping("/create")
     @Operation(summary = "创建会员文章")
     // @PreAuthorize("@ss.hasPermission('member:article:create')")
-    public CommonResult<Long> createArticle(@Valid @RequestBody MemberArticleCreateReqVO createReqVO) {
+    public CommonResult<Long> createArticle(@Valid @RequestBody ArticleCreateReqVO createReqVO) {
         return success(articleService.createArticle(createReqVO));
     }
 
     @PutMapping("/update")
     @Operation(summary = "更新会员文章")
     @PreAuthorize("@ss.hasPermission('member:article:update')")
-    public CommonResult<Boolean> updateArticle(@Valid @RequestBody MemberArticleUpdateReqVO updateReqVO) {
+    public CommonResult<Boolean> updateArticle(@Valid @RequestBody ArticleUpdateReqVO updateReqVO) {
         articleService.updateArticle(updateReqVO);
         return success(true);
     }
@@ -55,17 +55,17 @@ public class MemberArticleController {
     @Operation(summary = "获得会员文章")
     @Parameter(name = "id", description = "编号", required = true, example = "1024")
     @PreAuthorize("@ss.hasPermission('member:article:query')")
-    public CommonResult<MemberArticleRespVO> getArticle(@RequestParam("id") Long id) {
-        MemberArticleDO article = articleService.getArticle(id);
-        return success(MemberArticleConvert.INSTANCE.convert(article));
+    public CommonResult<ArticleRespVO> getArticle(@RequestParam("id") Long id) {
+        ArticleDO article = articleService.getArticle(id);
+        return success(ArticleConvert.INSTANCE.convert(article));
     }
 
     @GetMapping("/page")
     @Operation(summary = "获得会员文章分页")
     @PreAuthorize("@ss.hasPermission('member:article:query')")
-    public CommonResult<PageResult<MemberArticleRespVO>> getArticlePage(@Valid MemberArticlePageReqVO pageVO) {
-        PageResult<MemberArticleDO> pageResult = articleService.getArticlePage(pageVO);
-        return success(MemberArticleConvert.INSTANCE.convertPage(pageResult));
+    public CommonResult<PageResult<ArticleRespVO>> getArticlePage(@Valid ArticlePageReqVO pageVO) {
+        PageResult<ArticleDO> pageResult = articleService.getArticlePage(pageVO);
+        return success(ArticleConvert.INSTANCE.convertPage(pageResult));
     }
 
 } 

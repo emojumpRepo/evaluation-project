@@ -37,15 +37,11 @@ public class MemberBabyController {
         return success(true);
     }
 
-
-
     @GetMapping("/list")
     @Operation(summary = "获得宝宝信息列表")
     public CommonResult<PageResult<MemberBabyRespVO>> getBabyList(@Valid MemberBabyPageReqVO pageVO) {
         PageResult<MemberBabyDO> pageResult = babyService.getBabyList(pageVO);
         return success(MemberBabyConvert.INSTANCE.convertPage(pageResult));
     }
-
-
 
 } 

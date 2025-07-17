@@ -1,11 +1,11 @@
-package cn.iocoder.yudao.module.member.controller.app.article.vo;
+package cn.iocoder.yudao.module.emojump.controller.app.article.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 @Schema(description = "用户 APP - 会员文章 Response VO")
 @Data
-public class AppMemberArticleRespVO {
+public class AppArticleRespVO {
 
     @Schema(description = "文章ID", required = true, example = "1024")
     private Long id;

@@ -1,4 +1,4 @@
-package cn.iocoder.yudao.module.member.controller.admin.article.vo;
+package cn.iocoder.yudao.module.emojump.controller.admin.article.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -11,7 +11,7 @@ import javax.validation.constraints.NotNull;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public class MemberArticleUpdateReqVO extends MemberArticleCreateReqVO {
+public class ArticleUpdateReqVO extends ArticleCreateReqVO {
 
     @Schema(description = "文章ID", required = true, example = "1024")
     @NotNull(message = "文章ID不能为空")

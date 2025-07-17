@@ -1,20 +1,20 @@
-package cn.iocoder.yudao.module.member.service.article;
+package cn.iocoder.yudao.module.emojump.service.article;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
-import cn.iocoder.yudao.module.member.controller.admin.article.vo.MemberArticleCreateReqVO;
-import cn.iocoder.yudao.module.member.controller.admin.article.vo.MemberArticlePageReqVO;
-import cn.iocoder.yudao.module.member.controller.admin.article.vo.MemberArticleUpdateReqVO;
-import cn.iocoder.yudao.module.member.controller.app.article.vo.AppMemberArticlePageReqVO;
-import cn.iocoder.yudao.module.member.convert.article.MemberArticleConvert;
-import cn.iocoder.yudao.module.member.dal.dataobject.article.MemberArticleDO;
-import cn.iocoder.yudao.module.member.dal.mysql.article.MemberArticleMapper;
+import cn.iocoder.yudao.module.emojump.controller.admin.article.vo.ArticleCreateReqVO;
+import cn.iocoder.yudao.module.emojump.controller.admin.article.vo.ArticlePageReqVO;
+import cn.iocoder.yudao.module.emojump.controller.admin.article.vo.ArticleUpdateReqVO;
+import cn.iocoder.yudao.module.emojump.controller.app.article.vo.AppArticlePageReqVO;
+import cn.iocoder.yudao.module.emojump.convert.article.ArticleConvert;
+import cn.iocoder.yudao.module.emojump.dal.dataobject.article.ArticleDO;
+import cn.iocoder.yudao.module.emojump.dal.mysql.article.ArticleMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
 import javax.annotation.Resource;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
-import static cn.iocoder.yudao.module.member.enums.ErrorCodeConstants.ARTICLE_NOT_EXISTS;
+import static cn.iocoder.yudao.module.emojump.enums.ErrorCodeConstants.ARTICLE_NOT_EXISTS;
 import java.time.LocalDateTime;
 
 /**
@@ -24,15 +24,15 @@ import java.time.LocalDateTime;
  */
 @Service
 @Validated
-public class MemberArticleServiceImpl implements MemberArticleService {
+public class ArticleServiceImpl implements ArticleService {
 
     @Resource
-    private MemberArticleMapper articleMapper;
+    private ArticleMapper articleMapper;
 
     @Override
-    public Long createArticle(MemberArticleCreateReqVO createReqVO) {
+    public Long createArticle(ArticleCreateReqVO createReqVO) {
         // 插入
-        MemberArticleDO article = MemberArticleConvert.INSTANCE.convert(createReqVO);
+        ArticleDO article = ArticleConvert.INSTANCE.convert(createReqVO);
         // 设置默认值
         if (article.getViewCount() == null) {
             article.setViewCount(0);
@@ -50,15 +50,15 @@ public class MemberArticleServiceImpl implements MemberArticleService {
     }
 
     @Override
-    public void updateArticle(MemberArticleUpdateReqVO updateReqVO) {
+    public void updateArticle(ArticleUpdateReqVO updateReqVO) {
         // 校验存在并获取原文章信息
-        MemberArticleDO existingArticle = articleMapper.selectById(updateReqVO.getId());
+        ArticleDO existingArticle = articleMapper.selectById(updateReqVO.getId());
         if (existingArticle == null) {
             throw exception(ARTICLE_NOT_EXISTS);
         }
         
         // 更新
-        MemberArticleDO updateObj = MemberArticleConvert.INSTANCE.convert(updateReqVO);
+        ArticleDO updateObj = ArticleConvert.INSTANCE.convert(updateReqVO);
         
         // 如果文章状态改为已发布且发布时间为空，设置为当前时间戳
         if (updateObj.getStatus() != null && updateObj.getStatus() == 1 && 
@@ -84,23 +84,23 @@ public class MemberArticleServiceImpl implements MemberArticleService {
     }
 
     @Override
-    public MemberArticleDO getArticle(Long id) {
+    public ArticleDO getArticle(Long id) {
         return articleMapper.selectById(id);
     }
 
     @Override
-    public PageResult<MemberArticleDO> getArticlePage(MemberArticlePageReqVO pageReqVO) {
+    public PageResult<ArticleDO> getArticlePage(ArticlePageReqVO pageReqVO) {
         return articleMapper.selectPage(pageReqVO);
     }
 
     @Override
-    public PageResult<MemberArticleDO> getAppArticlePage(AppMemberArticlePageReqVO pageReqVO) {
+    public PageResult<ArticleDO> getAppArticlePage(AppArticlePageReqVO pageReqVO) {
         return articleMapper.selectAppPage(pageReqVO);
     }
 
     @Override
-    public MemberArticleDO getAppArticle(Long id) {
-        MemberArticleDO article = articleMapper.selectByIdAndStatus(id);
+    public ArticleDO getAppArticle(Long id) {
+        ArticleDO article = articleMapper.selectByIdAndStatus(id);
         if (article != null) {
             // 增加阅读量
             increaseViewCount(id);
@@ -111,7 +111,7 @@ public class MemberArticleServiceImpl implements MemberArticleService {
     @Override
     public void increaseViewCount(Long id) {
         // 增加阅读量
-        MemberArticleDO article = articleMapper.selectById(id);
+        ArticleDO article = articleMapper.selectById(id);
         if (article != null) {
             article.setViewCount(article.getViewCount() + 1);
             articleMapper.updateById(article);
@@ -121,7 +121,7 @@ public class MemberArticleServiceImpl implements MemberArticleService {
     @Override
     public void increaseLikeCount(Long id) {
         // 增加点赞量
-        MemberArticleDO article = articleMapper.selectById(id);
+        ArticleDO article = articleMapper.selectById(id);
         if (article != null) {
             article.setLikeCount(article.getLikeCount() + 1);
             articleMapper.updateById(article);
