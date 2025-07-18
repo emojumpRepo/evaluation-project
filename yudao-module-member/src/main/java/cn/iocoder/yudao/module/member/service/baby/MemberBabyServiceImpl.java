@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.member.service.baby;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.member.controller.admin.baby.vo.MemberBabyPageReqVO;
 import cn.iocoder.yudao.module.member.controller.app.baby.vo.AppMemberBabyCreateReqVO;
@@ -8,6 +9,7 @@ import cn.iocoder.yudao.module.member.controller.app.baby.vo.AppMemberBabyUpdate
 import cn.iocoder.yudao.module.member.convert.baby.MemberBabyConvert;
 import cn.iocoder.yudao.module.member.dal.dataobject.baby.MemberBabyDO;
 import cn.iocoder.yudao.module.member.dal.mysql.baby.MemberBabyMapper;
+import cn.iocoder.yudao.module.member.dal.mysql.user.MemberUserMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
@@ -30,6 +32,8 @@ public class MemberBabyServiceImpl implements MemberBabyService {
 
     @Resource
     private MemberBabyMapper babyMapper;
+    @Resource
+    private MemberUserMapper memberUserMapper;
 
     @Override
     public Long createBaby(AppMemberBabyCreateReqVO createReqVO) {
@@ -70,6 +74,15 @@ public class MemberBabyServiceImpl implements MemberBabyService {
 
     @Override
     public PageResult<MemberBabyDO> getBabyList(MemberBabyPageReqVO pageReqVO) {
+        // 新增：如果传入手机号，先查用户ID
+        if (StrUtil.isNotEmpty(pageReqVO.getMobile())) {
+            Long userId = memberUserMapper.selectIdByMobile(pageReqVO.getMobile());
+            if (userId == null) {
+                // 返回空分页
+                return new PageResult<>();
+            }
+            pageReqVO.setUserId(userId);
+        }
         return babyMapper.selectPage(pageReqVO);
     }
 

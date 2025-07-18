@@ -9,7 +9,7 @@ import cn.iocoder.yudao.module.emojump.dal.dataobject.article.ArticleDO;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * 会员文章 Mapper
+ * 文章 Mapper
  *
  * @author 芋道源码
  */

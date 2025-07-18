@@ -8,16 +8,17 @@ import cn.iocoder.yudao.module.emojump.controller.app.article.vo.AppArticlePageR
 import cn.iocoder.yudao.module.emojump.dal.dataobject.article.ArticleDO;
 
 import javax.validation.Valid;
+import java.util.List;
 
 /**
- * 会员文章 Service 接口
+ * 文章 Service 接口
  *
  * @author 芋道源码
  */
 public interface ArticleService {
 
     /**
-     * 创建会员文章
+     * 创建文章
      *
      * @param createReqVO 创建信息
      * @return 编号
@@ -25,21 +26,28 @@ public interface ArticleService {
     Long createArticle(@Valid ArticleCreateReqVO createReqVO);
 
     /**
-     * 更新会员文章
+     * 更新文章
      *
      * @param updateReqVO 更新信息
      */
     void updateArticle(@Valid ArticleUpdateReqVO updateReqVO);
 
     /**
-     * 删除会员文章
+     * 删除文章
      *
      * @param id 编号
      */
     void deleteArticle(Long id);
 
     /**
-     * 获得会员文章
+     * 批量删除文章
+     *
+     * @param ids 编号列表
+     */
+    void deleteArticles(List<Long> ids);
+
+    /**
+     * 获得文章
      *
      * @param id 编号
      * @return 会员文章
@@ -47,26 +55,26 @@ public interface ArticleService {
     ArticleDO getArticle(Long id);
 
     /**
-     * 获得会员文章分页
+     * 获得文章分页
      *
      * @param pageReqVO 分页查询
-     * @return 会员文章分页
+     * @return 文章分页
      */
     PageResult<ArticleDO> getArticlePage(ArticlePageReqVO pageReqVO);
 
     /**
-     * App端获得会员文章分页（只获取已发布的文章）
+     * App端获得文章分页（只获取已发布的文章）
      *
      * @param pageReqVO 分页查询
-     * @return 会员文章分页
+     * @return 文章分页
      */
     PageResult<ArticleDO> getAppArticlePage(AppArticlePageReqVO pageReqVO);
 
     /**
-     * App端获得会员文章详情（只获取已发布的文章）
+     * App端获得文章详情（只获取已发布的文章）
      *
      * @param id 编号
-     * @return 会员文章
+     * @return 文章
      */
     ArticleDO getAppArticle(Long id);
 

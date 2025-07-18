@@ -22,4 +22,6 @@ public class MemberBabyPageReqVO extends PageParam {
     @Schema(description = "用户ID", example = "1024")
     private Long userId;
 
+    @Schema(description = "用户手机号", example = "15888888888")
+    private String mobile;
 } 
