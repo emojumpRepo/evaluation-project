@@ -3,7 +3,7 @@ package cn.iocoder.yudao.module.emojump.controller.app;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.emojump.controller.app.vo.questionnaire.*;
-import cn.iocoder.yudao.module.emojump.service.QuestionnaireService;
+import cn.iocoder.yudao.module.emojump.service.questionnaire.QuestionnaireService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

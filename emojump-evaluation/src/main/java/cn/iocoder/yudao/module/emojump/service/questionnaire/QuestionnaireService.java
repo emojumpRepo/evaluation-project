@@ -1,7 +1,10 @@
-package cn.iocoder.yudao.module.emojump.service;
+package cn.iocoder.yudao.module.emojump.service.questionnaire;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
-import cn.iocoder.yudao.module.emojump.controller.admin.vo.questionnaire.*;
+import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.QuestionnaireCreateReqVO;
+import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.QuestionnairePageReqVO;
+import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.QuestionnaireRespVO;
+import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.QuestionnaireUpdateReqVO;
 import cn.iocoder.yudao.module.emojump.controller.app.vo.questionnaire.*;
 
 import javax.validation.Valid;

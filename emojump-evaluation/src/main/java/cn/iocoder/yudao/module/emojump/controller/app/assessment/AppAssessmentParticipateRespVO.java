@@ -1,4 +1,4 @@
-package cn.iocoder.yudao.module.emojump.controller.app.vo.assessment;
+package cn.iocoder.yudao.module.emojump.controller.app.assessment;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;

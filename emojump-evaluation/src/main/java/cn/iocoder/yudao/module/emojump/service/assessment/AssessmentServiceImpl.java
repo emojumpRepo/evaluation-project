@@ -1,10 +1,13 @@
 package cn.iocoder.yudao.module.emojump.service.assessment;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
-import cn.iocoder.yudao.module.emojump.controller.admin.vo.assessment.*;
-import cn.iocoder.yudao.module.emojump.controller.admin.vo.questionnaire.QuestionnairePageReqVO;
-import cn.iocoder.yudao.module.emojump.controller.admin.vo.questionnaire.QuestionnaireRespVO;
-import cn.iocoder.yudao.module.emojump.controller.app.vo.assessment.*;
+import cn.iocoder.yudao.module.emojump.controller.admin.assessment.AssessmentCreateReqVO;
+import cn.iocoder.yudao.module.emojump.controller.admin.assessment.AssessmentPageReqVO;
+import cn.iocoder.yudao.module.emojump.controller.admin.assessment.AssessmentRespVO;
+import cn.iocoder.yudao.module.emojump.controller.admin.assessment.AssessmentUpdateReqVO;
+import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.QuestionnairePageReqVO;
+import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.QuestionnaireRespVO;
+import cn.iocoder.yudao.module.emojump.controller.app.assessment.*;
 import cn.iocoder.yudao.module.emojump.convert.assessment.AssessmentConvert;
 import cn.iocoder.yudao.module.emojump.convert.questionnaire.QuestionnaireConvert;
 import cn.iocoder.yudao.module.emojump.dal.dataobject.assessment.AssessmentDO;
@@ -14,7 +17,6 @@ import cn.iocoder.yudao.module.emojump.dal.mysql.assessment.AssessmentMapper;
 import cn.iocoder.yudao.module.emojump.dal.mysql.assessment.AssessmentQuestionnaireMapper;
 import cn.iocoder.yudao.module.emojump.dal.mysql.questionnaire.QuestionnaireMapper;
 import cn.iocoder.yudao.module.emojump.enums.AssessmentStatusEnum;
-import cn.iocoder.yudao.module.emojump.service.AssessmentService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;

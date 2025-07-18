@@ -1,4 +1,4 @@
-package cn.iocoder.yudao.module.emojump.controller.admin.vo.questionnaire;
+package cn.iocoder.yudao.module.emojump.controller.admin.questionnaire;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;

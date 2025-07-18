@@ -1,13 +1,15 @@
 package cn.iocoder.yudao.module.emojump.service.questionnaire;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
-import cn.iocoder.yudao.module.emojump.controller.admin.vo.questionnaire.*;
+import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.QuestionnaireCreateReqVO;
+import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.QuestionnairePageReqVO;
+import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.QuestionnaireRespVO;
+import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.QuestionnaireUpdateReqVO;
 import cn.iocoder.yudao.module.emojump.controller.app.vo.questionnaire.*;
 import cn.iocoder.yudao.module.emojump.convert.questionnaire.QuestionnaireConvert;
 import cn.iocoder.yudao.module.emojump.dal.dataobject.questionnaire.QuestionnaireDO;
 import cn.iocoder.yudao.module.emojump.dal.mysql.questionnaire.QuestionnaireMapper;
 import cn.iocoder.yudao.module.emojump.enums.QuestionnaireStatusEnum;
-import cn.iocoder.yudao.module.emojump.service.QuestionnaireService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;

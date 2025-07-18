@@ -1,11 +1,10 @@
-package cn.iocoder.yudao.module.emojump.controller.admin;
+package cn.iocoder.yudao.module.emojump.controller.admin.assessment;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
-import cn.iocoder.yudao.module.emojump.controller.admin.vo.assessment.*;
-import cn.iocoder.yudao.module.emojump.controller.admin.vo.questionnaire.QuestionnairePageReqVO;
-import cn.iocoder.yudao.module.emojump.controller.admin.vo.questionnaire.QuestionnaireRespVO;
-import cn.iocoder.yudao.module.emojump.service.AssessmentService;
+import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.QuestionnairePageReqVO;
+import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.QuestionnaireRespVO;
+import cn.iocoder.yudao.module.emojump.service.assessment.AssessmentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
