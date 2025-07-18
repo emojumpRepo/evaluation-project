@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.emojump.service.article;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.emojump.controller.admin.article.vo.ArticleCreateReqVO;
 import cn.iocoder.yudao.module.emojump.controller.admin.article.vo.ArticlePageReqVO;
@@ -12,13 +13,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
 import javax.annotation.Resource;
+import java.util.List;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.module.emojump.enums.ErrorCodeConstants.ARTICLE_NOT_EXISTS;
 import java.time.LocalDateTime;
 
 /**
- * 会员文章 Service 实现类
+ * 文章 Service 实现类
  *
  * @author 芋道源码
  */
@@ -75,6 +77,22 @@ public class ArticleServiceImpl implements ArticleService {
         validateArticleExists(id);
         // 删除
         articleMapper.deleteById(id);
+    }
+
+    @Override
+    public void deleteArticles(List<Long> ids) {
+        // 参数校验
+        if (CollUtil.isEmpty(ids)) {
+            return;
+        }
+        
+        // 校验每个文章是否存在
+        for (Long id : ids) {
+            validateArticleExists(id);
+        }
+        
+        // 批量删除
+        articleMapper.deleteBatchIds(ids);
     }
 
     private void validateArticleExists(Long id) {
