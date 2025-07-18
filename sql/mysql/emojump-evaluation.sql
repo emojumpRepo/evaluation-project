@@ -24,10 +24,10 @@ CREATE TABLE IF NOT EXISTS `emo_questionnaire` (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
-  PRIMARY KEY (`id`),
-  KEY `idx_status` (`status`),
-  KEY `idx_type` (`type`),
-  KEY `idx_create_time` (`create_time`)
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_status`(`status` ASC) USING BTREE,
+  INDEX `idx_type`(`type` ASC) USING BTREE,
+  INDEX `idx_create_time`(`create_time` ASC) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='问卷表';
 
 -- 测评表
@@ -51,11 +51,11 @@ CREATE TABLE IF NOT EXISTS `emo_assessment` (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
-  PRIMARY KEY (`id`),
-  KEY `idx_status` (`status`),
-  KEY `idx_type` (`type`),
-  KEY `idx_create_time` (`create_time`),
-  KEY `idx_start_time` (`start_time`)
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_status`(`status` ASC) USING BTREE,
+  INDEX `idx_type`(`type` ASC) USING BTREE,
+  INDEX `idx_create_time`(`create_time` ASC) USING BTREE,
+  INDEX `idx_start_time`(`start_time` ASC) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='测评表';
 
 -- 测评问卷关联表
@@ -72,14 +72,14 @@ CREATE TABLE IF NOT EXISTS `emo_assessment_questionnaire` (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_assessment_questionnaire` (`assessment_id`, `questionnaire_id`),
-  KEY `idx_assessment_id` (`assessment_id`),
-  KEY `idx_questionnaire_id` (`questionnaire_id`),
-  KEY `idx_sort_order` (`sort_order`)
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_assessment_questionnaire`(`assessment_id` ASC, `questionnaire_id` ASC) USING BTREE,
+  INDEX `idx_assessment_id`(`assessment_id` ASC) USING BTREE,
+  INDEX `idx_questionnaire_id`(`questionnaire_id` ASC) USING BTREE,
+  INDEX `idx_sort_order`(`sort_order` ASC) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='测评问卷关联表';
 
--- 测评结果表（用于存储整体测评结果）
+-- 测评结果表
 CREATE TABLE IF NOT EXISTS `emo_assessment_result` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '结果编号',
   `assessment_id` bigint NOT NULL COMMENT '测评ID',
@@ -95,14 +95,14 @@ CREATE TABLE IF NOT EXISTS `emo_assessment_result` (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_assessment_user` (`assessment_id`, `user_id`),
-  KEY `idx_assessment_id` (`assessment_id`),
-  KEY `idx_user_id` (`user_id`),
-  KEY `idx_completed_time` (`completed_time`)
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_assessment_user`(`assessment_id` ASC, `user_id` ASC) USING BTREE,
+  INDEX `idx_assessment_id`(`assessment_id` ASC) USING BTREE,
+  INDEX `idx_user_id`(`user_id` ASC) USING BTREE,
+  INDEX `idx_completed_time`(`completed_time` ASC) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='测评结果表';
 
--- 问卷结果表（用于存储单个问卷的结果）
+-- 问卷结果表
 CREATE TABLE IF NOT EXISTS `emo_questionnaire_result` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '问卷结果编号',
   `assessment_result_id` bigint NOT NULL COMMENT '测评结果ID',
@@ -118,14 +118,14 @@ CREATE TABLE IF NOT EXISTS `emo_questionnaire_result` (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_result_questionnaire` (`assessment_result_id`, `questionnaire_id`),
-  KEY `idx_assessment_result_id` (`assessment_result_id`),
-  KEY `idx_questionnaire_id` (`questionnaire_id`),
-  KEY `idx_completed_time` (`completed_time`)
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_result_questionnaire`(`assessment_result_id` ASC, `questionnaire_id` ASC) USING BTREE,
+  INDEX `idx_assessment_result_id`(`assessment_result_id` ASC) USING BTREE,
+  INDEX `idx_questionnaire_id`(`questionnaire_id` ASC) USING BTREE,
+  INDEX `idx_completed_time`(`completed_time` ASC) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='问卷结果表';
 
--- 问卷访问记录表（可选，用于统计分析）
+-- 问卷访问记录表
 CREATE TABLE IF NOT EXISTS `emo_questionnaire_access` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '访问记录编号',
   `questionnaire_id` bigint NOT NULL COMMENT '问卷ID',
@@ -140,10 +140,10 @@ CREATE TABLE IF NOT EXISTS `emo_questionnaire_access` (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
-  PRIMARY KEY (`id`),
-  KEY `idx_questionnaire_id` (`questionnaire_id`),
-  KEY `idx_user_id` (`user_id`),
-  KEY `idx_access_time` (`access_time`)
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_questionnaire_id`(`questionnaire_id` ASC) USING BTREE,
+  INDEX `idx_user_id`(`user_id` ASC) USING BTREE,
+  INDEX `idx_access_time`(`access_time` ASC) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='问卷访问记录表';
 
 -- 插入测试数据
