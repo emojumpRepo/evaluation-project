@@ -1,4 +1,4 @@
-package cn.iocoder.yudao.module.emojump.controller.app.assessment;
+package cn.iocoder.yudao.module.emojump.controller.app.assessment.vo;
 
 import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import io.swagger.v3.oas.annotations.media.Schema;

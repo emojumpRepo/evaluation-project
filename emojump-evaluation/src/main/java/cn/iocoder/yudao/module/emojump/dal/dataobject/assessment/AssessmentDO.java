@@ -1,6 +1,6 @@
 package cn.iocoder.yudao.module.emojump.dal.dataobject.assessment;
 
-import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
+import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
 import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -21,19 +21,19 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AssessmentDO extends BaseDO {
+public class AssessmentDO extends TenantBaseDO {
 
     /**
      * 测评编号
      */
     @TableId
     private Long id;
-    
+
     /**
      * 测评标题
      */
     private String title;
-    
+
     /**
      * 测评描述
      */
@@ -45,52 +45,52 @@ public class AssessmentDO extends BaseDO {
      * 枚举 {@link cn.iocoder.yudao.module.emojump.enums.AssessmentTypeEnum}
      */
     private Integer type;
-    
+
     /**
      * 测评状态
      *
      * 枚举 {@link cn.iocoder.yudao.module.emojump.enums.AssessmentStatusEnum}
      */
     private Integer status;
-    
+
     /**
      * 目标人群
      */
     private String targetAudience;
-    
+
     /**
      * 测评时长（分钟）
      */
     private Integer duration;
-    
+
     /**
      * 开始时间
      */
     private LocalDateTime startTime;
-    
+
     /**
      * 结束时间
      */
     private LocalDateTime endTime;
-    
+
     /**
      * 是否需要预约
      */
     private Boolean needAppointment;
-    
+
     /**
      * 最大参与人数
      */
     private Integer maxParticipants;
-    
+
     /**
      * 当前参与人数
      */
     private Integer currentParticipants;
-    
+
     /**
      * 备注
      */
     private String remark;
 
-} 
+}

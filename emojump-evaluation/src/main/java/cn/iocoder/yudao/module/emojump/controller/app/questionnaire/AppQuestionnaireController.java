@@ -1,8 +1,9 @@
-package cn.iocoder.yudao.module.emojump.controller.app;
-
+package cn.iocoder.yudao.module.emojump.controller.app.questionnaire;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
-import cn.iocoder.yudao.module.emojump.controller.app.vo.questionnaire.*;
+import cn.iocoder.yudao.module.emojump.controller.app.questionnaire.vo.AppQuestionnaireAccessRespVO;
+import cn.iocoder.yudao.module.emojump.controller.app.questionnaire.vo.AppQuestionnairePageReqVO;
+import cn.iocoder.yudao.module.emojump.controller.app.questionnaire.vo.AppQuestionnaireRespVO;
 import cn.iocoder.yudao.module.emojump.service.questionnaire.QuestionnaireService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -37,8 +38,8 @@ public class AppQuestionnaireController {
 
     @GetMapping("/published")
     @Operation(summary = "获得已发布问卷列表")
-    public CommonResult<PageResult<AppQuestionnaireRespVO>> getPublishedQuestionnaireList(@Valid AppQuestionnairePageReqVO pageVO) {
-        return success(questionnaireService.getPublishedAppQuestionnairePage(pageVO));
+    public CommonResult<PageResult<AppQuestionnaireRespVO>> getPublishedQuestionnaireList(@Valid AppQuestionnairePageReqVO pageReqVO) {
+        return success(questionnaireService.getPublishedAppQuestionnairePage(pageReqVO));
     }
 
     @GetMapping("/access")
@@ -58,14 +59,14 @@ public class AppQuestionnaireController {
 
     @GetMapping("/popular")
     @Operation(summary = "获得热门问卷列表")
-    public CommonResult<PageResult<AppQuestionnaireRespVO>> getPopularQuestionnaireList(@Valid AppQuestionnairePageReqVO pageVO) {
-        return success(questionnaireService.getPopularQuestionnairePage(pageVO));
+    public CommonResult<PageResult<AppQuestionnaireRespVO>> getPopularQuestionnaireList(@Valid AppQuestionnairePageReqVO pageReqVO) {
+        return success(questionnaireService.getPopularQuestionnairePage(pageReqVO));
     }
 
     @GetMapping("/search")
     @Operation(summary = "搜索问卷")
     @Parameter(name = "keyword", description = "关键字", required = true)
-    public CommonResult<PageResult<AppQuestionnaireRespVO>> searchQuestionnaire(@RequestParam("keyword") String keyword, @Valid AppQuestionnairePageReqVO pageVO) {
-        return success(questionnaireService.searchQuestionnaire(keyword, pageVO));
+    public CommonResult<PageResult<AppQuestionnaireRespVO>> searchQuestionnaire(@RequestParam("keyword") String keyword, @Valid AppQuestionnairePageReqVO pageReqVO) {
+        return success(questionnaireService.searchQuestionnaire(keyword, pageReqVO));
     }
 } 

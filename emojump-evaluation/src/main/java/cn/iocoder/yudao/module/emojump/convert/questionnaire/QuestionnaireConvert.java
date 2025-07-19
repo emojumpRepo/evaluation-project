@@ -4,7 +4,7 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.QuestionnaireCreateReqVO;
 import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.QuestionnaireRespVO;
 import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.QuestionnaireUpdateReqVO;
-import cn.iocoder.yudao.module.emojump.controller.app.vo.questionnaire.AppQuestionnaireRespVO;
+import cn.iocoder.yudao.module.emojump.controller.app.questionnaire.vo.AppQuestionnaireRespVO;
 import cn.iocoder.yudao.module.emojump.dal.dataobject.questionnaire.QuestionnaireDO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

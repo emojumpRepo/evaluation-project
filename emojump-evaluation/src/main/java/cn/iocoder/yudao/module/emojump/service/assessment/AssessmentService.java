@@ -7,7 +7,12 @@ import cn.iocoder.yudao.module.emojump.controller.admin.assessment.AssessmentRes
 import cn.iocoder.yudao.module.emojump.controller.admin.assessment.AssessmentUpdateReqVO;
 import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.QuestionnairePageReqVO;
 import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.QuestionnaireRespVO;
-import cn.iocoder.yudao.module.emojump.controller.app.assessment.*;
+import cn.iocoder.yudao.module.emojump.controller.app.assessment.vo.AppAssessmentPageReqVO;
+import cn.iocoder.yudao.module.emojump.controller.app.assessment.vo.AppAssessmentParticipateRespVO;
+import cn.iocoder.yudao.module.emojump.controller.app.assessment.vo.AppAssessmentRespVO;
+import cn.iocoder.yudao.module.emojump.controller.app.assessment.vo.AppAssessmentResultRespVO;
+import cn.iocoder.yudao.module.emojump.controller.app.assessment.vo.AppAssessmentSubmitReqVO;
+import cn.iocoder.yudao.module.emojump.controller.app.assessment.vo.AppQuestionnaireSubmitReqVO;
 
 import javax.validation.Valid;
 
@@ -109,6 +114,13 @@ public interface AssessmentService {
      * @return 参与结果
      */
     AppAssessmentParticipateRespVO participateAssessment(Long id);
+
+    /**
+     * 提交单个问卷结果
+     *
+     * @param submitReqVO 提交信息
+     */
+    void submitQuestionnaireResult(AppQuestionnaireSubmitReqVO submitReqVO);
 
     /**
      * 提交测评结果
