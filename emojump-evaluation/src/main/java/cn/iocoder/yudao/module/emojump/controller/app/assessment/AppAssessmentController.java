@@ -2,6 +2,12 @@ package cn.iocoder.yudao.module.emojump.controller.app.assessment;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.module.emojump.controller.app.assessment.vo.AppAssessmentPageReqVO;
+import cn.iocoder.yudao.module.emojump.controller.app.assessment.vo.AppAssessmentParticipateRespVO;
+import cn.iocoder.yudao.module.emojump.controller.app.assessment.vo.AppAssessmentRespVO;
+import cn.iocoder.yudao.module.emojump.controller.app.assessment.vo.AppAssessmentResultRespVO;
+import cn.iocoder.yudao.module.emojump.controller.app.assessment.vo.AppAssessmentSubmitReqVO;
+import cn.iocoder.yudao.module.emojump.controller.app.assessment.vo.AppQuestionnaireSubmitReqVO;
 import cn.iocoder.yudao.module.emojump.service.assessment.AssessmentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -36,14 +42,14 @@ public class AppAssessmentController {
 
     @GetMapping("/list")
     @Operation(summary = "获得测评列表")
-    public CommonResult<PageResult<AppAssessmentRespVO>> getAssessmentList(@Valid AppAssessmentPageReqVO pageVO) {
-        return success(assessmentService.getAppAssessmentPage(pageVO));
+    public CommonResult<PageResult<AppAssessmentRespVO>> getAssessmentList(@Valid AppAssessmentPageReqVO pageReqVO) {
+        return success(assessmentService.getAppAssessmentPage(pageReqVO));
     }
 
     @GetMapping("/published")
     @Operation(summary = "获得已发布测评列表")
-    public CommonResult<PageResult<AppAssessmentRespVO>> getPublishedAssessmentList(@Valid AppAssessmentPageReqVO pageVO) {
-        return success(assessmentService.getPublishedAssessmentPage(pageVO));
+    public CommonResult<PageResult<AppAssessmentRespVO>> getPublishedAssessmentList(@Valid AppAssessmentPageReqVO pageReqVO) {
+        return success(assessmentService.getPublishedAssessmentPage(pageReqVO));
     }
 
     @PostMapping("/participate")
@@ -51,6 +57,13 @@ public class AppAssessmentController {
     @Parameter(name = "id", description = "测评编号", required = true)
     public CommonResult<AppAssessmentParticipateRespVO> participateAssessment(@RequestParam("id") Long id) {
         return success(assessmentService.participateAssessment(id));
+    }
+
+    @PostMapping("/submit-questionnaire")
+    @Operation(summary = "提交单个问卷结果（回调）")
+    public CommonResult<Boolean> submitQuestionnaireResult(@Valid @RequestBody AppQuestionnaireSubmitReqVO submitReqVO) {
+        assessmentService.submitQuestionnaireResult(submitReqVO);
+        return success(true);
     }
 
     @PostMapping("/submit")
@@ -62,8 +75,8 @@ public class AppAssessmentController {
 
     @GetMapping("/my-assessments")
     @Operation(summary = "获得我的测评列表")
-    public CommonResult<PageResult<AppAssessmentRespVO>> getMyAssessmentList(@Valid AppAssessmentPageReqVO pageVO) {
-        return success(assessmentService.getMyAssessmentPage(pageVO));
+    public CommonResult<PageResult<AppAssessmentRespVO>> getMyAssessmentList(@Valid AppAssessmentPageReqVO pageReqVO) {
+        return success(assessmentService.getMyAssessmentPage(pageReqVO));
     }
 
     @GetMapping("/result")

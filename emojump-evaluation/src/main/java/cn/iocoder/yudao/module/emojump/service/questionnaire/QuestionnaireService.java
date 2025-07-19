@@ -5,7 +5,9 @@ import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.Questionna
 import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.QuestionnairePageReqVO;
 import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.QuestionnaireRespVO;
 import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.QuestionnaireUpdateReqVO;
-import cn.iocoder.yudao.module.emojump.controller.app.vo.questionnaire.*;
+import cn.iocoder.yudao.module.emojump.controller.app.questionnaire.vo.AppQuestionnaireAccessRespVO;
+import cn.iocoder.yudao.module.emojump.controller.app.questionnaire.vo.AppQuestionnairePageReqVO;
+import cn.iocoder.yudao.module.emojump.controller.app.questionnaire.vo.AppQuestionnaireRespVO;
 
 import javax.validation.Valid;
 

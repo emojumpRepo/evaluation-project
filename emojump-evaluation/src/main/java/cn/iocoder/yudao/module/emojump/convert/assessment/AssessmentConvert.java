@@ -4,7 +4,7 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.emojump.controller.admin.assessment.AssessmentCreateReqVO;
 import cn.iocoder.yudao.module.emojump.controller.admin.assessment.AssessmentRespVO;
 import cn.iocoder.yudao.module.emojump.controller.admin.assessment.AssessmentUpdateReqVO;
-import cn.iocoder.yudao.module.emojump.controller.app.assessment.AppAssessmentRespVO;
+import cn.iocoder.yudao.module.emojump.controller.app.assessment.vo.AppAssessmentRespVO;
 import cn.iocoder.yudao.module.emojump.dal.dataobject.assessment.AssessmentDO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

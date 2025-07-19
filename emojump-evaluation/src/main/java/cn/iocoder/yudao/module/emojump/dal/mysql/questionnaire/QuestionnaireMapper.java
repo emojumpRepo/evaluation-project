@@ -4,7 +4,7 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.QuestionnairePageReqVO;
-import cn.iocoder.yudao.module.emojump.controller.app.vo.questionnaire.AppQuestionnairePageReqVO;
+import cn.iocoder.yudao.module.emojump.controller.app.questionnaire.vo.AppQuestionnairePageReqVO;
 import cn.iocoder.yudao.module.emojump.dal.dataobject.questionnaire.QuestionnaireDO;
 import org.apache.ibatis.annotations.Mapper;
 

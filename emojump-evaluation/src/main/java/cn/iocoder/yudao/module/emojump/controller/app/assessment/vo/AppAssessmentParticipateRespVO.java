@@ -1,4 +1,4 @@
-package cn.iocoder.yudao.module.emojump.controller.app.assessment;
+package cn.iocoder.yudao.module.emojump.controller.app.assessment.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -8,6 +8,9 @@ import java.util.List;
 @Schema(description = "App端 - 测评参与 Response VO")
 @Data
 public class AppAssessmentParticipateRespVO {
+
+    @Schema(description = "测评结果ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
+    private Long assessmentResultId;
 
     @Schema(description = "测评编号", example = "1024")
     private Long assessmentId;
