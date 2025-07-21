@@ -1,0 +1,195 @@
+package cn.iocoder.yudao.module.emojump.framework.survey.util;
+
+import cn.iocoder.yudao.module.emojump.framework.survey.enums.ExternalSurveyStatusEnum;
+import cn.iocoder.yudao.module.emojump.framework.survey.vo.ExternalSurveyRespVO;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StringUtils;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+
+/**
+ * 问卷数据转换工具类
+ *
+ * @author 芋道源码
+ */
+@Slf4j
+public class SurveyDataConverter {
+
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    /**
+     * 获取问卷类型对应的数字
+     *
+     * @param surveyType 外部问卷类型
+     * @return 本地问卷类型数字
+     */
+    public static Integer convertSurveyType(String surveyType) {
+        if (!StringUtils.hasText(surveyType)) {
+            return 4; // 默认为其他类型
+        }
+        
+        switch (surveyType.toLowerCase()) {
+            case "normal":
+                return 4; // 其他
+            case "exam":
+                return 1; // 考试
+            case "vote":
+                return 2; // 投票
+            case "registration":
+                return 3; // 报名
+            default:
+                return 4; // 其他
+        }
+    }
+
+    /**
+     * 转换外部状态为本地状态
+     *
+     * @param externalSurvey 外部问卷数据
+     * @return 本地状态值
+     */
+    public static Integer convertStatus(ExternalSurveyRespVO externalSurvey) {
+        String currentStatus = externalSurvey.getCurrentStatus();
+        return ExternalSurveyStatusEnum.getLocalStatus(currentStatus);
+    }
+
+    /**
+     * 生成问卷链接
+     *
+     * @param externalSurvey 外部问卷数据
+     * @param baseUrl 外部系统基础URL
+     * @return 问卷链接
+     */
+    public static String generateSurveyLink(ExternalSurveyRespVO externalSurvey, String baseUrl) {
+        if (!StringUtils.hasText(externalSurvey.getSurveyPath())) {
+            return "";
+        }
+        
+        // 移除baseUrl末尾的斜杠
+        String cleanBaseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+        
+        // 生成问卷链接，假设外部系统的问卷访问路径为 /survey/{surveyPath}
+        return cleanBaseUrl + "/survey/" + externalSurvey.getSurveyPath();
+    }
+
+    /**
+     * 解析结束时间
+     *
+     * @param endTimeStr 结束时间字符串
+     * @return LocalDateTime对象，解析失败返回null
+     */
+    public static LocalDateTime parseEndTime(String endTimeStr) {
+        if (!StringUtils.hasText(endTimeStr)) {
+            return null;
+        }
+        
+        try {
+            return LocalDateTime.parse(endTimeStr, DATE_TIME_FORMATTER);
+        } catch (DateTimeParseException e) {
+            log.warn("[parseEndTime] 解析结束时间失败: {}", endTimeStr, e);
+            return null;
+        }
+    }
+
+    /**
+     * 生成问卷描述
+     *
+     * @param externalSurvey 外部问卷数据
+     * @return 问卷描述
+     */
+    public static String generateDescription(ExternalSurveyRespVO externalSurvey) {
+        StringBuilder description = new StringBuilder();
+        
+        // 使用备注作为描述
+        if (StringUtils.hasText(externalSurvey.getRemark())) {
+            description.append(externalSurvey.getRemark());
+        }
+        
+        // 添加问卷类型信息
+        if (StringUtils.hasText(externalSurvey.getSurveyType())) {
+            if (description.length() > 0) {
+                description.append(" | ");
+            }
+            description.append("类型: ").append(externalSurvey.getSurveyType());
+        }
+        
+        // 添加答题时间信息
+        if (StringUtils.hasText(externalSurvey.getAnswerBegTime()) && 
+            StringUtils.hasText(externalSurvey.getAnswerEndTime())) {
+            if (description.length() > 0) {
+                description.append(" | ");
+            }
+            description.append("答题时间: ")
+                      .append(externalSurvey.getAnswerBegTime())
+                      .append("-")
+                      .append(externalSurvey.getAnswerEndTime());
+        }
+        
+        return description.length() > 0 ? description.toString() : "外部问卷系统同步";
+    }
+
+    /**
+     * 估算问卷时长（分钟）
+     * 由于外部系统没有提供时长信息，这里根据问卷类型给出估算值
+     *
+     * @param surveyType 问卷类型
+     * @return 估算时长（分钟）
+     */
+    public static Integer estimateDuration(String surveyType) {
+        if (!StringUtils.hasText(surveyType)) {
+            return 10; // 默认10分钟
+        }
+        
+        switch (surveyType.toLowerCase()) {
+            case "exam":
+                return 30; // 考试类型估算30分钟
+            case "vote":
+                return 5;  // 投票类型估算5分钟
+            case "registration":
+                return 15; // 报名类型估算15分钟
+            case "normal":
+            default:
+                return 10; // 普通问卷估算10分钟
+        }
+    }
+
+    /**
+     * 判断问卷是否开放
+     *
+     * @param externalSurvey 外部问卷数据
+     * @return 是否开放
+     */
+    public static Boolean isOpen(ExternalSurveyRespVO externalSurvey) {
+        String currentStatus = externalSurvey.getCurrentStatus();
+        return "published".equals(currentStatus);
+    }
+
+    /**
+     * 生成目标人群信息
+     *
+     * @param externalSurvey 外部问卷数据
+     * @return 目标人群
+     */
+    public static String generateTargetAudience(ExternalSurveyRespVO externalSurvey) {
+        // 由于外部系统没有明确的目标人群字段，根据问卷类型推断
+        String surveyType = externalSurvey.getSurveyType();
+        if (!StringUtils.hasText(surveyType)) {
+            return "所有用户";
+        }
+        
+        switch (surveyType.toLowerCase()) {
+            case "exam":
+                return "学生";
+            case "vote":
+                return "所有用户";
+            case "registration":
+                return "参与者";
+            case "normal":
+            default:
+                return "所有用户";
+        }
+    }
+
+}
