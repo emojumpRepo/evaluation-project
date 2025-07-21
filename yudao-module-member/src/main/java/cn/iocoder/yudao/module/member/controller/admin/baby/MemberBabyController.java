@@ -27,8 +27,6 @@ public class MemberBabyController {
     @Resource
     private MemberBabyService babyService;
 
-
-
     @DeleteMapping("/delete")
     @Operation(summary = "删除宝宝信息")
     @Parameter(name = "id", description = "编号", required = true)
