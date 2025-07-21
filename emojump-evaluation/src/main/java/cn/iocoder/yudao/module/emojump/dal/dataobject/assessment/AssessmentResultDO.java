@@ -7,24 +7,25 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 /**
- * 测评问卷关联 DO
+ * 测评结果 DO
  *
  * @author 芋道源码
  */
-@TableName("emo_assessment_questionnaire")
-@KeySequence("emo_assessment_questionnaire_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写。
+@TableName("emo_assessment_result")
+@KeySequence("emo_assessment_result_seq")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AssessmentQuestionnaireDO extends TenantBaseDO {
+public class AssessmentResultDO extends TenantBaseDO {
 
     /**
-     * 关联编号
+     * 结果编号
      */
     @TableId
     private Long id;
@@ -35,23 +36,33 @@ public class AssessmentQuestionnaireDO extends TenantBaseDO {
     private Long assessmentId;
 
     /**
-     * 问卷ID
+     * 用户ID
      */
-    private Long questionnaireId;
+    private Long userId;
 
     /**
-     * 排序顺序
+     * 总体得分
      */
-    private Integer sortOrder;
+    private BigDecimal overallScore;
 
     /**
-     * 是否必填
+     * 总体评级
      */
-    private Boolean isRequired;
+    private String overallLevel;
 
     /**
-     * 权重（用于计算总分）
+     * 总体测评报告
      */
-    private BigDecimal weight;
+    private String overallReport;
+
+    /**
+     * 完成时间
+     */
+    private LocalDateTime completedTime;
+
+    /**
+     * 状态：0-进行中 1-已完成
+     */
+    private Integer status;
 
 }

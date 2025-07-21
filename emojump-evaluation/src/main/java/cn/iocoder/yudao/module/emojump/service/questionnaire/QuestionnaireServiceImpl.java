@@ -1,13 +1,21 @@
 package cn.iocoder.yudao.module.emojump.service.questionnaire;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
-import cn.iocoder.yudao.module.emojump.controller.admin.vo.questionnaire.*;
-import cn.iocoder.yudao.module.emojump.controller.app.vo.questionnaire.*;
+import cn.iocoder.yudao.framework.common.util.servlet.ServletUtils;
+import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.QuestionnaireCreateReqVO;
+import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.QuestionnairePageReqVO;
+import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.QuestionnaireRespVO;
+import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.QuestionnaireUpdateReqVO;
+import cn.iocoder.yudao.module.emojump.controller.app.questionnaire.vo.AppQuestionnaireRespVO;
+import cn.iocoder.yudao.module.emojump.controller.app.questionnaire.vo.AppQuestionnaireAccessRespVO;
+import cn.iocoder.yudao.module.emojump.controller.app.questionnaire.vo.AppQuestionnairePageReqVO;
+import cn.iocoder.yudao.module.emojump.controller.app.questionnaire.vo.AppQuestionnaireRespVO;
 import cn.iocoder.yudao.module.emojump.convert.questionnaire.QuestionnaireConvert;
+import cn.iocoder.yudao.module.emojump.dal.dataobject.questionnaire.QuestionnaireAccessDO;
 import cn.iocoder.yudao.module.emojump.dal.dataobject.questionnaire.QuestionnaireDO;
+import cn.iocoder.yudao.module.emojump.dal.mysql.questionnaire.QuestionnaireAccessMapper;
 import cn.iocoder.yudao.module.emojump.dal.mysql.questionnaire.QuestionnaireMapper;
 import cn.iocoder.yudao.module.emojump.enums.QuestionnaireStatusEnum;
-import cn.iocoder.yudao.module.emojump.service.QuestionnaireService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -18,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils.getLoginUserId;
 import static cn.iocoder.yudao.module.emojump.enums.ErrorCodeConstants.*;
 
 /**
@@ -31,6 +40,9 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
 
     @Resource
     private QuestionnaireMapper questionnaireMapper;
+
+    @Resource
+    private QuestionnaireAccessMapper questionnaireAccessMapper;
 
     @Override
     public Long createQuestionnaire(@Valid QuestionnaireCreateReqVO createReqVO) {
@@ -88,7 +100,7 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
         if (questionnaire == null) {
             throw exception(QUESTIONNAIRE_NOT_EXISTS);
         }
-        
+
         // 更新状态为已发布
         QuestionnaireDO updateObj = new QuestionnaireDO();
         updateObj.setId(id);
@@ -104,7 +116,7 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
         if (questionnaire == null) {
             throw exception(QUESTIONNAIRE_NOT_EXISTS);
         }
-        
+
         // 更新状态为已下线
         QuestionnaireDO updateObj = new QuestionnaireDO();
         updateObj.setId(id);
@@ -124,7 +136,7 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
         if (questionnaire == null) {
             throw exception(QUESTIONNAIRE_NOT_EXISTS);
         }
-        
+
         // 这里可以添加实际的链接测试逻辑
         // 比如发送HTTP请求测试链接是否可访问
         // 暂时简单返回true
@@ -154,14 +166,14 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
         if (questionnaire == null) {
             throw exception(QUESTIONNAIRE_NOT_EXISTS);
         }
-        
+
         // 创建访问响应
         AppQuestionnaireAccessRespVO accessRespVO = new AppQuestionnaireAccessRespVO();
         accessRespVO.setId(id);
         accessRespVO.setLink(questionnaire.getLink());
         accessRespVO.setAccessToken(generateAccessToken());
         accessRespVO.setExpireTime(LocalDateTime.now().plusHours(24)); // 24小时后过期
-        
+
         return accessRespVO;
     }
 
@@ -172,12 +184,18 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
         if (questionnaire == null) {
             throw exception(QUESTIONNAIRE_NOT_EXISTS);
         }
-        
+
         // 增加访问次数
-        QuestionnaireDO updateObj = new QuestionnaireDO();
-        updateObj.setId(id);
-        updateObj.setAccessCount(questionnaire.getAccessCount() + 1);
-        questionnaireMapper.updateById(updateObj);
+        questionnaireMapper.updateById(new QuestionnaireDO().setId(id).setAccessCount(questionnaire.getAccessCount() + 1));
+
+        // 记录访问日志
+        QuestionnaireAccessDO accessLog = new QuestionnaireAccessDO();
+        accessLog.setQuestionnaireId(id);
+        accessLog.setUserId(getLoginUserId());
+        accessLog.setIpAddress(ServletUtils.getClientIP());
+        accessLog.setUserAgent(ServletUtils.getUserAgent());
+        accessLog.setAccessTime(LocalDateTime.now());
+        questionnaireAccessMapper.insert(accessLog);
     }
 
     @Override
@@ -195,4 +213,4 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
     private String generateAccessToken() {
         return UUID.randomUUID().toString().replace("-", "");
     }
-} 
+}
