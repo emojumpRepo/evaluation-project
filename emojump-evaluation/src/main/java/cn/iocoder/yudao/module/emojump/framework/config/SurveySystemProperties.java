@@ -30,6 +30,11 @@ public class SurveySystemProperties {
     private String surveyListPath = "/api/survey/getSurveyList";
 
     /**
+     * 获取问卷系统管理员的永久token
+     */
+    private String surveyAdminToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODc1ZmQyODI2OThkM2UxZmI5OTI2NjkiLCJ1c2VybmFtZSI6ImFkbWluIiwiaWF0IjoxNzUyODI0MTEzfQ.QubjVJfsMWn_ZDtPSDPJqhFPV5Oj1acs8noa1_WC0JI";
+
+    /**
      * 连接超时时间（毫秒）
      */
     private Integer connectTimeout = 5000;

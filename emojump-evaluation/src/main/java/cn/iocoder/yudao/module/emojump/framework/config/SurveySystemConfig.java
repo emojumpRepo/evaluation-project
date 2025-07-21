@@ -23,12 +23,12 @@ public class SurveySystemConfig {
      * 创建用于外部问卷系统的RestTemplate
      * 如果项目中已有RestTemplate Bean，这个方法可以删除
      */
-    @Bean("surveySystemRestTemplate")
-    public RestTemplate surveySystemRestTemplate(RestTemplateBuilder builder) {
-        return builder
-                .setConnectTimeout(Duration.ofMillis(surveySystemProperties.getConnectTimeout()))
-                .setReadTimeout(Duration.ofMillis(surveySystemProperties.getReadTimeout()))
-                .build();
-    }
+    // @Bean("surveySystemRestTemplate")
+    // public RestTemplate surveySystemRestTemplate(RestTemplateBuilder builder) {
+    //     return builder
+    //             .setConnectTimeout(Duration.ofMillis(surveySystemProperties.getConnectTimeout()))
+    //             .setReadTimeout(Duration.ofMillis(surveySystemProperties.getReadTimeout()))
+    //             .build();
+    // }
 
 }

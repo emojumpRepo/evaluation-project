@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
@@ -18,6 +19,7 @@ import java.time.format.DateTimeParseException;
 public class SurveyDataConverter {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter ISO_DATE_TIME_FORMATTER = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
     /**
      * 获取问卷类型对应的数字
@@ -70,25 +72,54 @@ public class SurveyDataConverter {
         // 移除baseUrl末尾的斜杠
         String cleanBaseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
         
-        // 生成问卷链接，假设外部系统的问卷访问路径为 /survey/{surveyPath}
-        return cleanBaseUrl + "/survey/" + externalSurvey.getSurveyPath();
+        // 生成问卷链接，外部系统的问卷访问路径为 /render/{surveyPath}?t={timestamp}
+        return cleanBaseUrl + "/render/" + externalSurvey.getSurveyPath() + "?t=" + System.currentTimeMillis();
     }
 
     /**
-     * 解析结束时间
+     * 解析时间，支持多种时间格式
      *
-     * @param endTimeStr 结束时间字符串
+     * @param timeStr 时间字符串
      * @return LocalDateTime对象，解析失败返回null
      */
-    public static LocalDateTime parseEndTime(String endTimeStr) {
-        if (!StringUtils.hasText(endTimeStr)) {
+    public static LocalDateTime parseTime(String timeStr) {
+        if (!StringUtils.hasText(timeStr)) {
             return null;
         }
-        
+
         try {
-            return LocalDateTime.parse(endTimeStr, DATE_TIME_FORMATTER);
+            // 首先尝试解析 ISO 8601 格式 (如: 2025-07-18T03:27:05.000Z)
+            if (timeStr.contains("T") && (timeStr.endsWith("Z") || timeStr.contains("+"))) {
+                OffsetDateTime offsetDateTime = OffsetDateTime.parse(timeStr, ISO_DATE_TIME_FORMATTER);
+                return offsetDateTime.toLocalDateTime();
+            }
+
+            // 然后尝试解析标准格式 (如: 2035-07-15 17:11:41)
+            return LocalDateTime.parse(timeStr, DATE_TIME_FORMATTER);
+
         } catch (DateTimeParseException e) {
-            log.warn("[parseEndTime] 解析结束时间失败: {}", endTimeStr, e);
+            log.warn("[parseTime] 解析时间失败: {}, 错误: {}", timeStr, e.getMessage());
+
+            // 尝试其他可能的格式
+            try {
+                // 尝试只有日期的格式
+                if (timeStr.length() == 10) {
+                    return LocalDateTime.parse(timeStr + " 23:59:59", DATE_TIME_FORMATTER);
+                }
+
+                // 尝试去掉毫秒的ISO格式
+                if (timeStr.contains("T") && timeStr.endsWith("Z")) {
+                    String cleanTimeStr = timeStr.replace("Z", "");
+                    if (cleanTimeStr.contains(".")) {
+                        cleanTimeStr = cleanTimeStr.substring(0, cleanTimeStr.indexOf("."));
+                    }
+                    return LocalDateTime.parse(cleanTimeStr);
+                }
+
+            } catch (DateTimeParseException e2) {
+                log.error("[parseTime] 所有时间格式解析都失败: {}", timeStr, e2);
+            }
+
             return null;
         }
     }

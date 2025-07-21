@@ -1,9 +1,11 @@
 package cn.iocoder.yudao.module.emojump.framework.survey.vo;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 外部问卷系统响应VO
@@ -16,8 +18,8 @@ public class ExternalSurveyRespVO {
     /**
      * 问卷ID（外部系统的ID）
      */
-    @JsonProperty("id")
-    private String externalId;
+    @JsonProperty("surveyMetaId")
+    private String surveyMetaId;
 
     /**
      * 问卷标题
@@ -26,69 +28,111 @@ public class ExternalSurveyRespVO {
     private String title;
 
     /**
-     * 问卷描述
-     */
-    @JsonProperty("description")
-    private String description;
-
-    /**
-     * 问卷链接
-     */
-    @JsonProperty("link")
-    private String link;
-
-    /**
-     * 问卷类型
-     */
-    @JsonProperty("type")
-    private Integer type;
-
-    /**
-     * 问卷状态
-     */
-    @JsonProperty("status")
-    private Integer status;
-
-    /**
-     * 目标人群
-     */
-    @JsonProperty("targetAudience")
-    private String targetAudience;
-
-    /**
-     * 预计时长（分钟）
-     */
-    @JsonProperty("estimatedDuration")
-    private Integer estimatedDuration;
-
-    /**
-     * 是否开放
-     */
-    @JsonProperty("isOpen")
-    private Boolean isOpen;
-
-    /**
-     * 有效期开始时间
-     */
-    @JsonProperty("validFrom")
-    private LocalDateTime validFrom;
-
-    /**
-     * 有效期结束时间
-     */
-    @JsonProperty("validTo")
-    private LocalDateTime validTo;
-
-    /**
      * 备注
      */
     @JsonProperty("remark")
     private String remark;
 
     /**
-     * 最后更新时间
+     * 完成次数
      */
-    @JsonProperty("lastModified")
-    private LocalDateTime lastModified;
+    @JsonProperty("submitCount")
+    private Integer submitCount;
+
+    /**
+     * 问卷类型
+     */
+    @JsonProperty("surveyType")
+    private String surveyType;
+
+    /**
+     * 问卷路径
+     */
+    @JsonProperty("surveyPath")
+    private String surveyPath;
+
+    /**
+     * 当前状态
+     */
+    @JsonProperty("curStatus")
+    private SurveyStatus curStatus;
+
+    /**
+     * 状态历史列表
+     */
+    @JsonProperty("statusList")
+    private List<SurveyStatus> statusList;
+
+    /**
+     * 开始时间
+     */
+    @JsonProperty("beginTime")
+    private String beginTime;
+
+    /**
+     * 结束时间
+     */
+    @JsonProperty("endTime")
+    private String endTime;
+
+    /**
+     * 答题开始时间
+     */
+    @JsonProperty("answerBegTime")
+    private String answerBegTime;
+
+    /**
+     * 答题结束时间
+     */
+    @JsonProperty("answerEndTime")
+    private String answerEndTime;
+
+    /**
+     * 问卷配置ID
+     */
+    @JsonProperty("surveyConfId")
+    private String surveyConfId;
+
+    /**
+     * 创建时间
+     */
+    @JsonProperty("createdAt")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+    private LocalDateTime createdAt;
+
+    /**
+     * 更新时间
+     */
+    @JsonProperty("updatedAt")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+    private LocalDateTime updatedAt;
+
+    /**
+     * 问卷状态内部类
+     */
+    @Data
+    public static class SurveyStatus {
+        /**
+         * 状态值
+         */
+        @JsonProperty("status")
+        private String status;
+
+        /**
+         * 状态时间戳
+         */
+        @JsonProperty("date")
+        private Long date;
+    }
+
+    // 便捷方法：获取外部ID
+    public String getExternalId() {
+        return this.surveyMetaId;
+    }
+
+    // 便捷方法：获取当前状态字符串
+    public String getCurrentStatus() {
+        return curStatus != null ? curStatus.getStatus() : null;
+    }
 
 }

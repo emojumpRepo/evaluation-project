@@ -3,7 +3,9 @@ package cn.iocoder.yudao.module.emojump.service.questionnaire;
 import cn.iocoder.yudao.module.emojump.dal.dataobject.questionnaire.QuestionnaireDO;
 import cn.iocoder.yudao.module.emojump.dal.mysql.questionnaire.QuestionnaireMapper;
 import cn.iocoder.yudao.module.emojump.enums.QuestionnaireStatusEnum;
+import cn.iocoder.yudao.module.emojump.framework.config.SurveySystemProperties;
 import cn.iocoder.yudao.module.emojump.framework.survey.client.SurveySystemClient;
+import cn.iocoder.yudao.module.emojump.framework.survey.util.SurveyDataConverter;
 import cn.iocoder.yudao.module.emojump.framework.survey.vo.ExternalSurveyRespVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -33,6 +36,9 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
 
     @Resource
     private QuestionnaireMapper questionnaireMapper;
+
+    @Resource
+    private SurveySystemProperties surveySystemProperties;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -66,12 +72,12 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
 
             // 4. 获取外部问卷的ID集合
             Set<String> externalIds = externalSurveys.stream()
-                    .map(ExternalSurveyRespVO::getExternalId)
+                    .map(ExternalSurveyRespVO::getSurveyMetaId)
                     .collect(Collectors.toSet());
 
             // 5. 处理外部问卷数据
             for (ExternalSurveyRespVO externalSurvey : externalSurveys) {
-                QuestionnaireDO localQuestionnaire = localQuestionnaireMap.get(externalSurvey.getExternalId());
+                QuestionnaireDO localQuestionnaire = localQuestionnaireMap.get(externalSurvey.getSurveyMetaId());
                 
                 if (localQuestionnaire == null) {
                     // 新增问卷
@@ -129,29 +135,35 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
      * 创建新问卷
      */
     private void createNewQuestionnaire(ExternalSurveyRespVO externalSurvey) {
-        QuestionnaireDO questionnaire = QuestionnaireDO.builder()
-                .title(externalSurvey.getTitle())
-                .description(externalSurvey.getDescription())
-                .link(externalSurvey.getLink())
-                .type(externalSurvey.getType())
-                .status(externalSurvey.getStatus())
-                .targetAudience(externalSurvey.getTargetAudience())
-                .estimatedDuration(externalSurvey.getEstimatedDuration())
-                .accessCount(0)
-                .completionCount(0)
-                .isOpen(externalSurvey.getIsOpen())
-                .validFrom(externalSurvey.getValidFrom())
-                .validTo(externalSurvey.getValidTo())
-                .remark("external_id:" + externalSurvey.getExternalId())
-                .creator("system_sync")
-                .createTime(LocalDateTime.now())
-                .updateTime(LocalDateTime.now())
-                .build();
+        QuestionnaireDO questionnaire = new QuestionnaireDO();
+
+        // 设置必填字段，提供默认值防止null
+        questionnaire.setTitle(StringUtils.hasText(externalSurvey.getTitle()) ?
+                externalSurvey.getTitle() : "未命名问卷");
+        questionnaire.setDescription(SurveyDataConverter.generateDescription(externalSurvey));
+        questionnaire.setLink(SurveyDataConverter.generateSurveyLink(externalSurvey, surveySystemProperties.getBaseUrl()));
+
+        // 设置其他字段，使用转换工具类
+        questionnaire.setType(SurveyDataConverter.convertSurveyType(externalSurvey.getSurveyType()));
+        questionnaire.setStatus(SurveyDataConverter.convertStatus(externalSurvey));
+        questionnaire.setTargetAudience(SurveyDataConverter.generateTargetAudience(externalSurvey));
+        questionnaire.setEstimatedDuration(SurveyDataConverter.estimateDuration(externalSurvey.getSurveyType()));
+        questionnaire.setAccessCount(0);
+        questionnaire.setCompletionCount(externalSurvey.getSubmitCount() != null ? externalSurvey.getSubmitCount() : 0);
+        questionnaire.setIsOpen(SurveyDataConverter.isOpen(externalSurvey));
+        questionnaire.setValidFrom(SurveyDataConverter.parseTime(externalSurvey.getBeginTime()));
+        questionnaire.setValidTo(SurveyDataConverter.parseTime(externalSurvey.getEndTime()));
+        questionnaire.setRemark("external_id:" + externalSurvey.getSurveyMetaId());
+        questionnaire.setCreator("system_sync");
+        questionnaire.setCreateTime(LocalDateTime.now());
+        questionnaire.setUpdateTime(LocalDateTime.now());
 
         questionnaireMapper.insert(questionnaire);
-        
-        log.info("[createNewQuestionnaire] 新增问卷，外部ID: {}, 标题: {}", 
-                externalSurvey.getExternalId(), externalSurvey.getTitle());
+
+        log.info("[createNewQuestionnaire] 新增问卷，外部ID: {}, 标题: {}, 状态: {}, 类型: {}, 完成次数: {}",
+                externalSurvey.getSurveyMetaId(), questionnaire.getTitle(),
+                externalSurvey.getCurrentStatus(), externalSurvey.getSurveyType(),
+                externalSurvey.getSubmitCount());
     }
 
     /**
@@ -160,37 +172,53 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
     private boolean updateExistingQuestionnaire(QuestionnaireDO localQuestionnaire, ExternalSurveyRespVO externalSurvey) {
         boolean needUpdate = false;
 
+        // 生成新的字段值
+        String newTitle = StringUtils.hasText(externalSurvey.getTitle()) ? externalSurvey.getTitle() : "未命名问卷";
+//        String newDescription = SurveyDataConverter.generateDescription(externalSurvey);
+        String newLink = SurveyDataConverter.generateSurveyLink(externalSurvey, surveySystemProperties.getBaseUrl());
+//        Integer newType = SurveyDataConverter.convertSurveyType(externalSurvey.getSurveyType());
+        Integer newStatus = SurveyDataConverter.convertStatus(externalSurvey);
+//        String newTargetAudience = SurveyDataConverter.generateTargetAudience(externalSurvey);
+//        Integer newEstimatedDuration = SurveyDataConverter.estimateDuration(externalSurvey.getSurveyType());
+        Integer newCompletionCount = externalSurvey.getSubmitCount() != null ? externalSurvey.getSubmitCount() : 0;
+        Boolean newIsOpen = SurveyDataConverter.isOpen(externalSurvey);
+
         // 检查是否需要更新
-        if (!localQuestionnaire.getTitle().equals(externalSurvey.getTitle()) ||
-            !localQuestionnaire.getDescription().equals(externalSurvey.getDescription()) ||
-            !localQuestionnaire.getLink().equals(externalSurvey.getLink()) ||
-            !localQuestionnaire.getType().equals(externalSurvey.getType()) ||
-            !localQuestionnaire.getStatus().equals(externalSurvey.getStatus()) ||
-            !localQuestionnaire.getTargetAudience().equals(externalSurvey.getTargetAudience()) ||
-            !localQuestionnaire.getEstimatedDuration().equals(externalSurvey.getEstimatedDuration()) ||
-            !localQuestionnaire.getIsOpen().equals(externalSurvey.getIsOpen())) {
-            
+        if (!Objects.equals(localQuestionnaire.getTitle(), newTitle) ||
+//            !Objects.equals(localQuestionnaire.getDescription(), newDescription) ||
+            !Objects.equals(localQuestionnaire.getLink(), newLink) ||
+//            !Objects.equals(localQuestionnaire.getType(), newType) ||
+            !Objects.equals(localQuestionnaire.getStatus(), newStatus) ||
+//            !Objects.equals(localQuestionnaire.getTargetAudience(), newTargetAudience) ||
+//            !Objects.equals(localQuestionnaire.getEstimatedDuration(), newEstimatedDuration) ||
+            !Objects.equals(localQuestionnaire.getCompletionCount(), newCompletionCount) ||
+            !Objects.equals(localQuestionnaire.getIsOpen(), newIsOpen)) {
+
             needUpdate = true;
         }
 
         if (needUpdate) {
-            localQuestionnaire.setTitle(externalSurvey.getTitle());
-            localQuestionnaire.setDescription(externalSurvey.getDescription());
-            localQuestionnaire.setLink(externalSurvey.getLink());
-            localQuestionnaire.setType(externalSurvey.getType());
-            localQuestionnaire.setStatus(externalSurvey.getStatus());
-            localQuestionnaire.setTargetAudience(externalSurvey.getTargetAudience());
-            localQuestionnaire.setEstimatedDuration(externalSurvey.getEstimatedDuration());
-            localQuestionnaire.setIsOpen(externalSurvey.getIsOpen());
-            localQuestionnaire.setValidFrom(externalSurvey.getValidFrom());
-            localQuestionnaire.setValidTo(externalSurvey.getValidTo());
+            // 更新字段
+            localQuestionnaire.setTitle(newTitle);
+//            localQuestionnaire.setDescription(newDescription);
+            localQuestionnaire.setLink(newLink);
+//            localQuestionnaire.setType(newType);
+            localQuestionnaire.setStatus(newStatus);
+//            localQuestionnaire.setTargetAudience(newTargetAudience);
+//            localQuestionnaire.setEstimatedDuration(newEstimatedDuration);
+            localQuestionnaire.setCompletionCount(newCompletionCount);
+            localQuestionnaire.setIsOpen(newIsOpen);
+            localQuestionnaire.setValidFrom(SurveyDataConverter.parseTime(externalSurvey.getBeginTime()));
+            localQuestionnaire.setValidTo(SurveyDataConverter.parseTime(externalSurvey.getEndTime()));
             localQuestionnaire.setUpdater("system_sync");
             localQuestionnaire.setUpdateTime(LocalDateTime.now());
 
             questionnaireMapper.updateById(localQuestionnaire);
-            
-            log.info("[updateExistingQuestionnaire] 更新问卷，ID: {}, 标题: {}", 
-                    localQuestionnaire.getId(), localQuestionnaire.getTitle());
+
+            log.info("[updateExistingQuestionnaire] 更新问卷，ID: {}, 标题: {}, 外部状态: {} -> 本地状态: {}, 完成次数: {} -> {}",
+                    localQuestionnaire.getId(), localQuestionnaire.getTitle(),
+                    externalSurvey.getCurrentStatus(), newStatus,
+                    localQuestionnaire.getCompletionCount(), newCompletionCount);
         }
 
         return needUpdate;

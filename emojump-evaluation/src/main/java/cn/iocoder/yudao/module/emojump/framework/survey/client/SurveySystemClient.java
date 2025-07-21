@@ -49,8 +49,8 @@ public class SurveySystemClient {
             headers.setContentType(MediaType.APPLICATION_JSON);
             
             // 如果配置了API密钥，添加到请求头
-            if (StringUtils.hasText(surveySystemProperties.getApiKey())) {
-                headers.set("Authorization", "Bearer " + surveySystemProperties.getApiKey());
+            if (StringUtils.hasText(surveySystemProperties.getSurveyAdminToken())) {
+                headers.set("Authorization", "Bearer " + surveySystemProperties.getSurveyAdminToken());
             }
 
             HttpEntity<String> entity = new HttpEntity<>(headers);
