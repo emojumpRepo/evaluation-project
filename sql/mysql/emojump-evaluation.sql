@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS `emo_questionnaire` (
   `description` text COMMENT '问卷描述',
   `link` varchar(500) NOT NULL COMMENT '问卷链接',
   `type` tinyint NOT NULL COMMENT '问卷类型',
-  `status` tinyint NOT NULL DEFAULT 0 COMMENT '问卷状态：0-草稿 1-已发布 2-已下线 3-已归档',
+  `status` tinyint NOT NULL DEFAULT 0 COMMENT '问卷状态：0-草稿 1-已发布 2-已下线 3-已失效',
   `target_audience` varchar(200) COMMENT '目标人群',
   `estimated_duration` int COMMENT '预计时长（分钟）',
   `access_count` int DEFAULT 0 COMMENT '访问次数',

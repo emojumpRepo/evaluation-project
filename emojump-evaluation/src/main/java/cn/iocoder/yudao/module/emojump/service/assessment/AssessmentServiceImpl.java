@@ -37,10 +37,8 @@ import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import javax.annotation.Resource;
 import javax.validation.Valid;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
@@ -103,9 +101,8 @@ public class AssessmentServiceImpl implements AssessmentService {
         AssessmentDO updateObj = AssessmentConvert.INSTANCE.convert(updateReqVO);
         assessmentMapper.updateById(updateObj);
 
-        // 更新测评问卷关联
-        assessmentQuestionnaireMapper.deleteByAssessmentId(updateReqVO.getId());
-        createAssessmentQuestionnaires(updateReqVO.getId(), updateReqVO.getQuestionnaires());
+        // 更新测评问卷关联（智能更新，避免唯一约束冲突）
+        updateAssessmentQuestionnaires(updateReqVO.getId(), updateReqVO.getQuestionnaires());
     }
 
     @Override
@@ -631,5 +628,72 @@ public class AssessmentServiceImpl implements AssessmentService {
                 .collect(Collectors.toList());
 
         assessment.setQuestionnaires(questionnaireRespList);
+    }
+
+    /**
+     * 智能更新测评问卷关联关系
+     * 通过比较新旧关联关系，只删除需要删除的，只添加需要添加的，避免唯一约束冲突
+     *
+     * @param assessmentId 测评ID
+     * @param newQuestionnaires 新的问卷关联列表
+     */
+    private void updateAssessmentQuestionnaires(Long assessmentId, List<AssessmentCreateReqVO.AssessmentQuestionnaireReqVO> newQuestionnaires) {
+        // 1. 获取现有的关联关系
+        List<AssessmentQuestionnaireDO> existingRelations = assessmentQuestionnaireMapper.selectByAssessmentId(assessmentId);
+
+        // 2. 构建现有关联的Map，key为questionnaireId
+        Map<Long, AssessmentQuestionnaireDO> existingMap = existingRelations.stream()
+                .collect(Collectors.toMap(AssessmentQuestionnaireDO::getQuestionnaireId, Function.identity()));
+
+        // 3. 构建新关联的Set
+        Set<Long> newQuestionnaireIds = newQuestionnaires.stream()
+                .map(AssessmentCreateReqVO.AssessmentQuestionnaireReqVO::getQuestionnaireId)
+                .collect(Collectors.toSet());
+
+        // 4. 找出需要删除的关联（存在于旧关联中，但不存在于新关联中）
+        List<Long> toDeleteIds = existingRelations.stream()
+                .filter(relation -> !newQuestionnaireIds.contains(relation.getQuestionnaireId()))
+                .map(AssessmentQuestionnaireDO::getId)
+                .collect(Collectors.toList());
+
+        // 5. 找出需要添加的关联（存在于新关联中，但不存在于旧关联中）
+        List<AssessmentCreateReqVO.AssessmentQuestionnaireReqVO> toAdd = newQuestionnaires.stream()
+                .filter(newRelation -> !existingMap.containsKey(newRelation.getQuestionnaireId()))
+                .collect(Collectors.toList());
+
+        // 6. 找出需要更新的关联（存在于新旧关联中，但属性可能不同）
+        List<AssessmentQuestionnaireDO> toUpdate = newQuestionnaires.stream()
+                .filter(newRelation -> existingMap.containsKey(newRelation.getQuestionnaireId()))
+                .map(newRelation -> {
+                    AssessmentQuestionnaireDO existing = existingMap.get(newRelation.getQuestionnaireId());
+                    // 检查是否需要更新
+                    if (!Objects.equals(existing.getSortOrder(), newRelation.getSortOrder()) ||
+                        !Objects.equals(existing.getIsRequired(), newRelation.getIsRequired()) ||
+                        !Objects.equals(existing.getWeight(), newRelation.getWeight())) {
+                        // 需要更新
+                        existing.setSortOrder(newRelation.getSortOrder());
+                        existing.setIsRequired(newRelation.getIsRequired());
+                        existing.setWeight(newRelation.getWeight());
+                        return existing;
+                    }
+                    return null;
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        // 7. 执行删除操作
+        if (!toDeleteIds.isEmpty()) {
+            assessmentQuestionnaireMapper.deleteBatchIds(toDeleteIds);
+        }
+
+        // 8. 执行添加操作
+        if (!toAdd.isEmpty()) {
+            createAssessmentQuestionnaires(assessmentId, toAdd);
+        }
+
+        // 9. 执行更新操作
+        if (!toUpdate.isEmpty()) {
+            toUpdate.forEach(assessmentQuestionnaireMapper::updateById);
+        }
     }
 }
