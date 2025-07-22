@@ -48,11 +48,19 @@ public class SurveyDataConverter {
 
     /**
      * 转换外部状态为本地状态
+     * 优先检查暂停状态，如果有暂停状态则返回已下线状态
      *
      * @param externalSurvey 外部问卷数据
      * @return 本地状态值
      */
     public static Integer convertStatus(ExternalSurveyRespVO externalSurvey) {
+        // 优先检查暂停状态
+        if (externalSurvey.isPaused()) {
+            log.debug("[convertStatus] 问卷处于暂停状态，返回已下线状态，surveyId: {}", externalSurvey.getSurveyMetaId());
+            return ExternalSurveyStatusEnum.PAUSING.getLocalStatus();
+        }
+
+        // 如果没有暂停状态，则根据当前状态转换
         String currentStatus = externalSurvey.getCurrentStatus();
         return ExternalSurveyStatusEnum.getLocalStatus(currentStatus);
     }
@@ -188,11 +196,18 @@ public class SurveyDataConverter {
 
     /**
      * 判断问卷是否开放
+     * 如果有暂停状态，则不开放；否则根据当前状态判断
      *
      * @param externalSurvey 外部问卷数据
      * @return 是否开放
      */
     public static Boolean isOpen(ExternalSurveyRespVO externalSurvey) {
+        // 如果处于暂停状态，则不开放
+        if (externalSurvey.isPaused()) {
+            return false;
+        }
+
+        // 根据当前状态判断是否开放
         String currentStatus = externalSurvey.getCurrentStatus();
         return "published".equals(currentStatus);
     }
