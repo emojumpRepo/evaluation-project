@@ -64,7 +64,15 @@ public class QuestionnaireController {
     @Operation(summary = "获得问卷列表")
     @PreAuthorize("@ss.hasPermission('emojump:questionnaire:query')")
     public CommonResult<PageResult<QuestionnaireRespVO>> getQuestionnaireList(@Valid QuestionnairePageReqVO pageVO) {
-        return success(questionnaireService.getQuestionnairePage(pageVO));
+        try {
+            return success(questionnaireService.getQuestionnairePage(pageVO));
+        } catch (Exception e) {
+            // 记录详细的错误信息
+            System.err.println("获取问卷列表失败，参数: " + pageVO);
+            System.err.println("错误信息: " + e.getMessage());
+            e.printStackTrace();
+            return CommonResult.error(500, "获取问卷列表失败: " + e.getMessage());
+        }
     }
 
     @PostMapping("/publish")

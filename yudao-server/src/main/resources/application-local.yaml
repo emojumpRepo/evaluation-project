@@ -239,6 +239,14 @@ yudao:
   wxa-subscribe-message:
     miniprogram-state: developer # 跳转小程序类型：开发版为 “developer”；体验版为 “trial”为；正式版为 “formal”
   tencent-lbs-key: TVDBZ-TDILD-4ON4B-PFDZA-RNLKH-VVF6E # QQ 地图的密钥 https://lbs.qq.com/service/staticV2/staticGuide/staticDoc
+  survey-system: # 外部问卷系统配置
+    enabled: true # 是否启用外部问卷系统同步
+    base-url: http://localhost:8080 # 外部问卷系统基础URL
+    survey-list-path: /api/survey/getSurveyList # 获取问卷列表的API路径
+    connect-timeout: 5000 # 连接超时时间（毫秒）
+    read-timeout: 10000 # 读取超时时间（毫秒）
+    retry-count: 3 # 重试次数
+    api-key: # API密钥（如果需要认证）
 
 justauth:
   enabled: true

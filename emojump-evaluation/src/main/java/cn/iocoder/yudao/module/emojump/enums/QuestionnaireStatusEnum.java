@@ -15,7 +15,7 @@ public enum QuestionnaireStatusEnum {
     DRAFT(0, "草稿"),
     PUBLISHED(1, "已发布"),
     OFFLINE(2, "已下线"),
-    ARCHIVED(3, "已归档");
+    INVALID(3, "已失效");
 
     /**
      * 状态值
