@@ -15,6 +15,7 @@ import cn.iocoder.yudao.module.emojump.controller.app.assessment.vo.AppAssessmen
 import cn.iocoder.yudao.module.emojump.controller.app.assessment.vo.AppQuestionnaireSubmitReqVO;
 
 import javax.validation.Valid;
+import java.util.List;
 
 /**
  * 测评管理 Service 接口
@@ -80,6 +81,14 @@ public interface AssessmentService {
      * @return 问卷分页
      */
     PageResult<QuestionnaireRespVO> getAvailableQuestionnaires(QuestionnairePageReqVO pageReqVO);
+
+    /**
+     * 根据测评ID获取关联的问卷列表
+     *
+     * @param assessmentId 测评编号
+     * @return 问卷列表
+     */
+    List<QuestionnaireRespVO> getQuestionnairesByAssessmentId(Long assessmentId);
 
     // ==================== App端接口 ====================
 

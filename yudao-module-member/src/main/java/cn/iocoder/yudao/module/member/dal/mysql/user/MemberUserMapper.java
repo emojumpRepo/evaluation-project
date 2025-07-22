@@ -93,4 +93,14 @@ public interface MemberUserMapper extends BaseMapperX<MemberUserDO> {
         return update(null, lambdaUpdateWrapper);
     }
 
+    /**
+     * 通过手机号查找用户ID
+     * @param mobile 手机号
+     * @return 用户ID，查不到返回null
+     */
+    default Long selectIdByMobile(String mobile) {
+        MemberUserDO user = selectByMobile(mobile);
+        return user != null ? user.getId() : null;
+    }
+
 }
