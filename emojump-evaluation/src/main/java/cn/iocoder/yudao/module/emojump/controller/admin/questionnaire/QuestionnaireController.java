@@ -3,6 +3,7 @@ package cn.iocoder.yudao.module.emojump.controller.admin.questionnaire;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.emojump.service.questionnaire.QuestionnaireService;
+import cn.iocoder.yudao.module.emojump.framework.survey.vo.ExternalServiceResult;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -75,30 +76,30 @@ public class QuestionnaireController {
         }
     }
 
-    @PostMapping("/publish")
-    @Operation(summary = "发布问卷")
-    @Parameter(name = "id", description = "编号", required = true)
-    @PreAuthorize("@ss.hasPermission('emojump:questionnaire:publish')")
-    public CommonResult<Boolean> publishQuestionnaire(@RequestParam("id") Long id) {
-        questionnaireService.publishQuestionnaire(id);
-        return success(true);
-    }
+//    @PostMapping("/publish")
+//    @Operation(summary = "发布问卷")
+//    @Parameter(name = "id", description = "编号", required = true)
+//    @PreAuthorize("@ss.hasPermission('emojump:questionnaire:publish')")
+//    public CommonResult<Boolean> publishQuestionnaire(@RequestParam("id") Long id) {
+//        questionnaireService.publishQuestionnaire(id);
+//        return success(true);
+//    }
 
-    @PostMapping("/unpublish")
-    @Operation(summary = "下线问卷")
-    @Parameter(name = "id", description = "编号", required = true)
-    @PreAuthorize("@ss.hasPermission('emojump:questionnaire:publish')")
-    public CommonResult<Boolean> unpublishQuestionnaire(@RequestParam("id") Long id) {
-        questionnaireService.unpublishQuestionnaire(id);
-        return success(true);
-    }
-
-    @GetMapping("/published")
-    @Operation(summary = "获得已发布问卷列表")
-    @PreAuthorize("@ss.hasPermission('emojump:questionnaire:query')")
-    public CommonResult<PageResult<QuestionnaireRespVO>> getPublishedQuestionnaireList(@Valid QuestionnairePageReqVO pageVO) {
-        return success(questionnaireService.getPublishedQuestionnairePage(pageVO));
-    }
+//    @PostMapping("/unpublish")
+//    @Operation(summary = "下线问卷")
+//    @Parameter(name = "id", description = "编号", required = true)
+//    @PreAuthorize("@ss.hasPermission('emojump:questionnaire:publish')")
+//    public CommonResult<Boolean> unpublishQuestionnaire(@RequestParam("id") Long id) {
+//        questionnaireService.unpublishQuestionnaire(id);
+//        return success(true);
+//    }
+//
+//    @GetMapping("/published")
+//    @Operation(summary = "获得已发布问卷列表")
+//    @PreAuthorize("@ss.hasPermission('emojump:questionnaire:query')")
+//    public CommonResult<PageResult<QuestionnaireRespVO>> getPublishedQuestionnaireList(@Valid QuestionnairePageReqVO pageVO) {
+//        return success(questionnaireService.getPublishedQuestionnairePage(pageVO));
+//    }
 
     @PostMapping("/test-link")
     @Operation(summary = "测试问卷链接")
@@ -107,4 +108,34 @@ public class QuestionnaireController {
     public CommonResult<Boolean> testQuestionnaireLink(@RequestParam("id") Long id) {
         return success(questionnaireService.testQuestionnaireLink(id));
     }
-} 
+
+    @PostMapping("/publish")
+    @Operation(summary = "发布问卷到外部系统")
+    @Parameter(name = "id", description = "问卷编号", required = true)
+    @PreAuthorize("@ss.hasPermission('emojump:questionnaire:update')")
+    public CommonResult<Boolean> publishQuestionnaireToExternal(@RequestParam("id") Long id) {
+        ExternalServiceResult result = questionnaireService.publishQuestionnaireToExternal(id);
+
+        if (result.isSuccess()) {
+            return success(true);
+        } else {
+            return CommonResult.error(result.getErrorCode() != null ? result.getErrorCode() : 500,
+                    result.getErrorMessage());
+        }
+    }
+
+    @PostMapping("/pause")
+    @Operation(summary = "暂停外部系统的问卷")
+    @Parameter(name = "id", description = "问卷编号", required = true)
+    @PreAuthorize("@ss.hasPermission('emojump:questionnaire:update')")
+    public CommonResult<Boolean> pauseQuestionnaireInExternal(@RequestParam("id") Long id) {
+        ExternalServiceResult result = questionnaireService.pauseQuestionnaireInExternal(id);
+
+        if (result.isSuccess()) {
+            return success(true);
+        } else {
+            return CommonResult.error(result.getErrorCode() != null ? result.getErrorCode() : 500,
+                    result.getErrorMessage());
+        }
+    }
+}
