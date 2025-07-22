@@ -223,4 +223,23 @@ public class SurveyDataConverter {
         }
     }
 
+    /**
+     * 将LocalDateTime转换为外部系统需要的时间格式字符串
+     *
+     * @param dateTime LocalDateTime对象
+     * @return 格式化的时间字符串，格式为 yyyy-MM-dd HH:mm:ss
+     */
+    public static String formatTimeForExternal(LocalDateTime dateTime) {
+        if (dateTime == null) {
+            return null;
+        }
+
+        try {
+            return dateTime.format(DATE_TIME_FORMATTER);
+        } catch (Exception e) {
+            log.warn("[formatTimeForExternal] 格式化时间失败: {}", dateTime, e);
+            return null;
+        }
+    }
+
 }

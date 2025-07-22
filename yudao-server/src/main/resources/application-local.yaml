@@ -243,6 +243,9 @@ yudao:
     enabled: true # 是否启用外部问卷系统同步
     base-url: http://localhost:8080 # 外部问卷系统基础URL
     survey-list-path: /api/survey/getSurveyList # 获取问卷列表的API路径
+    update-config-path: /api/survey/updateSimpleConf # 更新问卷配置的API路径
+    publish-survey-path: /api/survey/publishSurvey # 发布问卷的API路径
+    pause-survey-path: /api/survey/pausingSurvey # 暂停问卷的API路径
     connect-timeout: 5000 # 连接超时时间（毫秒）
     read-timeout: 10000 # 读取超时时间（毫秒）
     retry-count: 3 # 重试次数

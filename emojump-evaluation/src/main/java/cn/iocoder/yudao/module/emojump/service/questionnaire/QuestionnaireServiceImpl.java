@@ -16,6 +16,10 @@ import cn.iocoder.yudao.module.emojump.dal.dataobject.questionnaire.Questionnair
 import cn.iocoder.yudao.module.emojump.dal.mysql.questionnaire.QuestionnaireAccessMapper;
 import cn.iocoder.yudao.module.emojump.dal.mysql.questionnaire.QuestionnaireMapper;
 import cn.iocoder.yudao.module.emojump.enums.QuestionnaireStatusEnum;
+import cn.iocoder.yudao.module.emojump.framework.survey.client.SurveySystemClient;
+import cn.iocoder.yudao.module.emojump.framework.survey.util.SurveyDataConverter;
+import cn.iocoder.yudao.module.emojump.framework.survey.vo.ExternalSurveyUpdateReqVO;
+import cn.iocoder.yudao.module.emojump.framework.survey.vo.ExternalServiceResult;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -23,7 +27,10 @@ import org.springframework.validation.annotation.Validated;
 import javax.annotation.Resource;
 import javax.validation.Valid;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StringUtils;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils.getLoginUserId;
@@ -36,6 +43,7 @@ import static cn.iocoder.yudao.module.emojump.enums.ErrorCodeConstants.*;
  */
 @Service
 @Validated
+@Slf4j
 public class QuestionnaireServiceImpl implements QuestionnaireService {
 
     @Resource
@@ -43,6 +51,9 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
 
     @Resource
     private QuestionnaireAccessMapper questionnaireAccessMapper;
+
+    @Resource
+    private SurveySystemClient surveySystemClient;
 
     @Override
     public Long createQuestionnaire(@Valid QuestionnaireCreateReqVO createReqVO) {
@@ -60,10 +71,22 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
     @Override
     public void updateQuestionnaire(@Valid QuestionnaireUpdateReqVO updateReqVO) {
         // 校验存在
-        validateQuestionnaireExists(updateReqVO.getId());
-        // 更新
+        QuestionnaireDO existingQuestionnaire = questionnaireMapper.selectById(updateReqVO.getId());
+        if (existingQuestionnaire == null) {
+            throw exception(QUESTIONNAIRE_NOT_EXISTS);
+        }
+
+        // 检查是否需要更新外部问卷系统的时间配置
+        boolean needUpdateExternalConfig = checkAndUpdateExternalConfig(existingQuestionnaire, updateReqVO);
+
+        // 更新本地数据库
         QuestionnaireDO updateObj = QuestionnaireConvert.INSTANCE.convert(updateReqVO);
         questionnaireMapper.updateById(updateObj);
+
+        if (needUpdateExternalConfig) {
+            log.info("[updateQuestionnaire] 问卷时间配置已更新，ID: {}, 标题: {}",
+                    updateReqVO.getId(), updateReqVO.getTitle());
+        }
     }
 
     @Override
@@ -212,5 +235,182 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
 
     private String generateAccessToken() {
         return UUID.randomUUID().toString().replace("-", "");
+    }
+
+    /**
+     * 检查并更新外部问卷系统配置
+     *
+     * @param existingQuestionnaire 现有问卷数据
+     * @param updateReqVO 更新请求
+     * @return 是否需要更新外部配置
+     */
+    private boolean checkAndUpdateExternalConfig(QuestionnaireDO existingQuestionnaire, QuestionnaireUpdateReqVO updateReqVO) {
+        // 检查是否是外部同步的问卷
+        if (!isExternalSyncQuestionnaire(existingQuestionnaire)) {
+            return false;
+        }
+
+        // 检查validFrom和validTo是否发生变化
+        boolean validFromChanged = !Objects.equals(existingQuestionnaire.getValidFrom(), updateReqVO.getValidFrom());
+        boolean validToChanged = !Objects.equals(existingQuestionnaire.getValidTo(), updateReqVO.getValidTo());
+
+        if (!validFromChanged && !validToChanged) {
+            return false; // 时间没有变化，不需要更新外部配置
+        }
+
+        // 获取外部问卷ID
+        String externalSurveyId = extractExternalSurveyId(existingQuestionnaire.getRemark());
+        if (!StringUtils.hasText(externalSurveyId)) {
+            log.warn("[checkAndUpdateExternalConfig] 无法获取外部问卷ID，问卷ID: {}, remark: {}",
+                    existingQuestionnaire.getId(), existingQuestionnaire.getRemark());
+            return false;
+        }
+
+        // 构建更新请求
+        ExternalSurveyUpdateReqVO externalUpdateReq = new ExternalSurveyUpdateReqVO();
+        externalUpdateReq.setSurveyId(externalSurveyId);
+        externalUpdateReq.setBeginTime(SurveyDataConverter.formatTimeForExternal(updateReqVO.getValidFrom()));
+        externalUpdateReq.setEndTime(SurveyDataConverter.formatTimeForExternal(updateReqVO.getValidTo()));
+
+        log.info("[checkAndUpdateExternalConfig] 准备更新外部问卷配置，问卷ID: {}, 外部ID: {}, 开始时间: {} -> {}, 结束时间: {} -> {}",
+                existingQuestionnaire.getId(), externalSurveyId,
+                SurveyDataConverter.formatTimeForExternal(existingQuestionnaire.getValidFrom()),
+                externalUpdateReq.getBeginTime(),
+                SurveyDataConverter.formatTimeForExternal(existingQuestionnaire.getValidTo()),
+                externalUpdateReq.getEndTime());
+
+        // 调用外部接口更新配置
+        boolean updateSuccess = surveySystemClient.updateSurveySimpleConfig(externalUpdateReq);
+
+        if (updateSuccess) {
+            log.info("[checkAndUpdateExternalConfig] 外部问卷配置更新成功，问卷ID: {}, 外部ID: {}",
+                    existingQuestionnaire.getId(), externalSurveyId);
+        } else {
+            log.error("[checkAndUpdateExternalConfig] 外部问卷配置更新失败，问卷ID: {}, 外部ID: {}",
+                    existingQuestionnaire.getId(), externalSurveyId);
+        }
+
+        return updateSuccess;
+    }
+
+    /**
+     * 判断是否是外部同步的问卷
+     *
+     * @param questionnaire 问卷数据
+     * @return 是否是外部同步的问卷
+     */
+    private boolean isExternalSyncQuestionnaire(QuestionnaireDO questionnaire) {
+        return questionnaire != null &&
+               StringUtils.hasText(questionnaire.getRemark()) &&
+               questionnaire.getRemark().startsWith("external_id:");
+    }
+
+    /**
+     * 从备注中提取外部问卷ID
+     *
+     * @param remark 备注信息，格式为 "external_id:外部ID"
+     * @return 外部问卷ID，如果提取失败返回null
+     */
+    private String extractExternalSurveyId(String remark) {
+        if (!StringUtils.hasText(remark) || !remark.startsWith("external_id:")) {
+            return null;
+        }
+
+        try {
+            return remark.substring("external_id:".length());
+        } catch (Exception e) {
+            log.warn("[extractExternalSurveyId] 提取外部问卷ID失败，remark: {}", remark, e);
+            return null;
+        }
+    }
+
+    @Override
+    public ExternalServiceResult publishQuestionnaireToExternal(Long id) {
+        // 校验问卷存在
+        QuestionnaireDO questionnaire = questionnaireMapper.selectById(id);
+        if (questionnaire == null) {
+            return ExternalServiceResult.error("问卷不存在");
+        }
+
+        // 检查是否是外部同步的问卷
+        if (!isExternalSyncQuestionnaire(questionnaire)) {
+            return ExternalServiceResult.error("该问卷不是从外部系统同步的问卷，无法执行发布操作");
+        }
+
+        // 获取外部问卷ID
+        String externalSurveyId = extractExternalSurveyId(questionnaire.getRemark());
+        if (!StringUtils.hasText(externalSurveyId)) {
+            log.warn("[publishQuestionnaireToExternal] 无法获取外部问卷ID，问卷ID: {}, remark: {}",
+                    questionnaire.getId(), questionnaire.getRemark());
+            return ExternalServiceResult.error("无法获取外部问卷ID");
+        }
+
+        log.info("[publishQuestionnaireToExternal] 准备发布问卷到外部系统，问卷ID: {}, 外部ID: {}, 标题: {}",
+                questionnaire.getId(), externalSurveyId, questionnaire.getTitle());
+
+        // 调用外部接口发布问卷
+        ExternalServiceResult result = surveySystemClient.publishSurvey(externalSurveyId);
+
+        if (result.isSuccess()) {
+            // 更新本地问卷状态为已发布
+            questionnaire.setStatus(QuestionnaireStatusEnum.PUBLISHED.getStatus());
+            questionnaire.setIsOpen(true);
+            questionnaire.setUpdateTime(LocalDateTime.now());
+            questionnaire.setUpdater("system_publish");
+            questionnaireMapper.updateById(questionnaire);
+
+            log.info("[publishQuestionnaireToExternal] 问卷发布成功，问卷ID: {}, 外部ID: {}",
+                    questionnaire.getId(), externalSurveyId);
+        } else {
+            log.error("[publishQuestionnaireToExternal] 问卷发布失败，问卷ID: {}, 外部ID: {}, 错误: {}",
+                    questionnaire.getId(), externalSurveyId, result.getErrorMessage());
+        }
+
+        return result;
+    }
+
+    @Override
+    public ExternalServiceResult pauseQuestionnaireInExternal(Long id) {
+        // 校验问卷存在
+        QuestionnaireDO questionnaire = questionnaireMapper.selectById(id);
+        if (questionnaire == null) {
+            return ExternalServiceResult.error("问卷不存在");
+        }
+
+        // 检查是否是外部同步的问卷
+        if (!isExternalSyncQuestionnaire(questionnaire)) {
+            return ExternalServiceResult.error("该问卷不是从外部系统同步的问卷，无法执行暂停操作");
+        }
+
+        // 获取外部问卷ID
+        String externalSurveyId = extractExternalSurveyId(questionnaire.getRemark());
+        if (!StringUtils.hasText(externalSurveyId)) {
+            log.warn("[pauseQuestionnaireInExternal] 无法获取外部问卷ID，问卷ID: {}, remark: {}",
+                    questionnaire.getId(), questionnaire.getRemark());
+            return ExternalServiceResult.error("无法获取外部问卷ID");
+        }
+
+        log.info("[pauseQuestionnaireInExternal] 准备暂停外部系统问卷，问卷ID: {}, 外部ID: {}, 标题: {}",
+                questionnaire.getId(), externalSurveyId, questionnaire.getTitle());
+
+        // 调用外部接口暂停问卷
+        ExternalServiceResult result = surveySystemClient.pauseSurvey(externalSurveyId);
+
+        if (result.isSuccess()) {
+            // 更新本地问卷状态为已下线
+            questionnaire.setStatus(QuestionnaireStatusEnum.OFFLINE.getStatus());
+            questionnaire.setIsOpen(false);
+            questionnaire.setUpdateTime(LocalDateTime.now());
+            questionnaire.setUpdater("system_pause");
+            questionnaireMapper.updateById(questionnaire);
+
+            log.info("[pauseQuestionnaireInExternal] 问卷暂停成功，问卷ID: {}, 外部ID: {}",
+                    questionnaire.getId(), externalSurveyId);
+        } else {
+            log.error("[pauseQuestionnaireInExternal] 问卷暂停失败，问卷ID: {}, 外部ID: {}, 错误: {}",
+                    questionnaire.getId(), externalSurveyId, result.getErrorMessage());
+        }
+
+        return result;
     }
 }

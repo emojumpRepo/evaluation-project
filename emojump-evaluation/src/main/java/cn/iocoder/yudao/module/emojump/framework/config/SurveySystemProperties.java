@@ -22,12 +22,27 @@ public class SurveySystemProperties {
     /**
      * 外部问卷系统基础URL
      */
-    private String baseUrl = "http://localhost:8080";
+    private String baseUrl = "http://localhost:8080/api/survey";
 
     /**
      * 获取问卷列表的API路径
      */
-    private String surveyListPath = "/api/survey/getSurveyList";
+    private String surveyListPath = "/getSurveyList";
+
+    /**
+     * 更新问卷简单配置的API路径
+     */
+    private String updateConfigPath = "/updateSimpleConf";
+
+    /**
+     * 发布问卷的API路径
+     */
+    private String publishSurveyPath = "/publishSurvey";
+
+    /**
+     * 暂停问卷的API路径
+     */
+    private String pauseSurveyPath = "/pausingSurvey";
 
     /**
      * 获取问卷系统管理员的永久token
@@ -59,6 +74,27 @@ public class SurveySystemProperties {
      */
     public String getSurveyListUrl() {
         return baseUrl + surveyListPath;
+    }
+
+    /**
+     * 获取完整的更新配置URL
+     */
+    public String getUpdateConfigUrl() {
+        return baseUrl + updateConfigPath;
+    }
+
+    /**
+     * 获取完整的发布问卷URL
+     */
+    public String getPublishSurveyUrl() {
+        return baseUrl + publishSurveyPath;
+    }
+
+    /**
+     * 获取完整的暂停问卷URL
+     */
+    public String getPauseSurveyUrl() {
+        return baseUrl + pauseSurveyPath;
     }
 
 }
