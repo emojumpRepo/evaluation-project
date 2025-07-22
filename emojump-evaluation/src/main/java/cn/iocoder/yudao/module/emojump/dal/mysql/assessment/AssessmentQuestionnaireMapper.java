@@ -3,6 +3,7 @@ package cn.iocoder.yudao.module.emojump.dal.mysql.assessment;
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.emojump.dal.dataobject.assessment.AssessmentQuestionnaireDO;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
@@ -40,11 +41,13 @@ public interface AssessmentQuestionnaireMapper extends BaseMapperX<AssessmentQue
     }
 
     /**
-     * 根据测评ID删除所有关联
+     * 根据测评ID删除所有关联（物理删除）
      *
      * @param assessmentId 测评ID
      */
     default void deleteByAssessmentId(Long assessmentId) {
+        // 现在 AssessmentQuestionnaireDO 不继承 TenantBaseDO，没有逻辑删除字段
+        // 可以直接使用 delete 方法进行物理删除
         delete(new LambdaQueryWrapperX<AssessmentQuestionnaireDO>()
                 .eq(AssessmentQuestionnaireDO::getAssessmentId, assessmentId));
     }
