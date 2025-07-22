@@ -58,6 +58,12 @@ public class ExternalSurveyRespVO {
     private SurveyStatus curStatus;
 
     /**
+     * 暂停状态
+     */
+    @JsonProperty("subStatus")
+    private SurveyStatus subStatus;
+
+    /**
      * 状态历史列表
      */
     @JsonProperty("statusList")
@@ -133,6 +139,16 @@ public class ExternalSurveyRespVO {
     // 便捷方法：获取当前状态字符串
     public String getCurrentStatus() {
         return curStatus != null ? curStatus.getStatus() : null;
+    }
+
+    // 便捷方法：获取暂停状态字符串
+    public String getSubStatusValue() {
+        return subStatus != null ? subStatus.getStatus() : null;
+    }
+
+    // 便捷方法：判断是否处于暂停状态
+    public boolean isPaused() {
+        return subStatus != null && "pausing".equals(subStatus.getStatus());
     }
 
 }

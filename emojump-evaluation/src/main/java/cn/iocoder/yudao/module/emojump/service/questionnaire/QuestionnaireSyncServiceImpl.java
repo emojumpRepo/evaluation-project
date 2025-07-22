@@ -6,6 +6,7 @@ import cn.iocoder.yudao.module.emojump.enums.QuestionnaireStatusEnum;
 import cn.iocoder.yudao.module.emojump.framework.config.SurveySystemProperties;
 import cn.iocoder.yudao.module.emojump.framework.survey.client.SurveySystemClient;
 import cn.iocoder.yudao.module.emojump.framework.survey.util.SurveyDataConverter;
+import cn.iocoder.yudao.module.emojump.framework.survey.util.SurveyStatusComparator;
 import cn.iocoder.yudao.module.emojump.framework.survey.vo.ExternalSurveyRespVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -183,6 +184,10 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
         Integer newCompletionCount = externalSurvey.getSubmitCount() != null ? externalSurvey.getSubmitCount() : 0;
         Boolean newIsOpen = SurveyDataConverter.isOpen(externalSurvey);
 
+        // 使用状态比较工具检查状态变化
+        SurveyStatusComparator.StatusChangeResult statusChangeResult =
+                SurveyStatusComparator.compareStatus(localQuestionnaire, externalSurvey);
+
         // 检查是否需要更新
         if (!Objects.equals(localQuestionnaire.getTitle(), newTitle) ||
 //            !Objects.equals(localQuestionnaire.getDescription(), newDescription) ||
@@ -215,10 +220,23 @@ public class QuestionnaireSyncServiceImpl implements QuestionnaireSyncService {
 
             questionnaireMapper.updateById(localQuestionnaire);
 
-            log.info("[updateExistingQuestionnaire] 更新问卷，ID: {}, 标题: {}, 外部状态: {} -> 本地状态: {}, 完成次数: {} -> {}",
-                    localQuestionnaire.getId(), localQuestionnaire.getTitle(),
-                    externalSurvey.getCurrentStatus(), newStatus,
-                    localQuestionnaire.getCompletionCount(), newCompletionCount);
+            // 增强的日志记录
+            StringBuilder logMessage = new StringBuilder();
+            logMessage.append(String.format("[updateExistingQuestionnaire] 更新问卷，ID: %d, 标题: %s",
+                    localQuestionnaire.getId(), localQuestionnaire.getTitle()));
+
+            if (statusChangeResult.isChanged()) {
+                logMessage.append(String.format(", 状态变化: %s", statusChangeResult.getChangeDescription()));
+            }
+
+            logMessage.append(String.format(", 完成次数: %d", newCompletionCount));
+
+            // 添加暂停状态的特殊标记
+            if (externalSurvey.isPaused()) {
+                logMessage.append(", [暂停状态检测]");
+            }
+
+            log.info(logMessage.toString());
         }
 
         return needUpdate;
