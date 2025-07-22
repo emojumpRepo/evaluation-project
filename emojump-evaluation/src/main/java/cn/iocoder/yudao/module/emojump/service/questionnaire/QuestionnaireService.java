@@ -8,6 +8,7 @@ import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.Questionna
 import cn.iocoder.yudao.module.emojump.controller.app.questionnaire.vo.AppQuestionnaireAccessRespVO;
 import cn.iocoder.yudao.module.emojump.controller.app.questionnaire.vo.AppQuestionnairePageReqVO;
 import cn.iocoder.yudao.module.emojump.controller.app.questionnaire.vo.AppQuestionnaireRespVO;
+import cn.iocoder.yudao.module.emojump.framework.survey.vo.ExternalServiceResult;
 
 import javax.validation.Valid;
 
@@ -133,4 +134,20 @@ public interface QuestionnaireService {
      * @return 问卷分页
      */
     PageResult<AppQuestionnaireRespVO> searchQuestionnaire(String keyword, AppQuestionnairePageReqVO pageReqVO);
-} 
+
+    /**
+     * 发布问卷到外部系统
+     *
+     * @param id 问卷ID
+     * @return 操作结果
+     */
+    ExternalServiceResult publishQuestionnaireToExternal(Long id);
+
+    /**
+     * 暂停外部系统的问卷
+     *
+     * @param id 问卷ID
+     * @return 操作结果
+     */
+    ExternalServiceResult pauseQuestionnaireInExternal(Long id);
+}
