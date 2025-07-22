@@ -193,6 +193,35 @@ public class AssessmentServiceImpl implements AssessmentService {
         return QuestionnaireConvert.INSTANCE.convertPage(pageResult);
     }
 
+    @Override
+    public List<QuestionnaireRespVO> getQuestionnairesByAssessmentId(Long assessmentId) {
+        // 校验测评存在
+        validateAssessmentExists(assessmentId);
+        
+        // 1. 根据 assessmentId 查询 emo_assessment_questionnaire 表，获取 questionnaire_id 列表
+        List<AssessmentQuestionnaireDO> assessmentQuestionnaires = assessmentQuestionnaireMapper.selectByAssessmentId(assessmentId);
+        System.out.println("DEBUG: assessmentId=" + assessmentId + ", 查询到的关联记录数量: " + assessmentQuestionnaires.size());
+        
+        // 如果查询不到数据，可能是租户ID不匹配的问题
+        if (assessmentQuestionnaires.isEmpty()) {
+            System.out.println("DEBUG: 没有找到测评ID=" + assessmentId + "的关联问卷记录");
+            return new ArrayList<>();
+        }
+        
+        // 2. 提取 questionnaire_id 列表
+        List<Long> questionnaireIds = CollectionUtils.convertList(assessmentQuestionnaires, AssessmentQuestionnaireDO::getQuestionnaireId);
+        System.out.println("DEBUG: 提取到的问卷ID列表: " + questionnaireIds);
+        
+        // 3. 根据 questionnaire_id 列表查询 emo_questionnaire 表
+        List<QuestionnaireDO> questionnaires = questionnaireMapper.selectBatchIds(questionnaireIds);
+        System.out.println("DEBUG: 查询到的问卷数量: " + questionnaires.size());
+        
+        // 4. 转换为响应对象并返回
+        List<QuestionnaireRespVO> result = QuestionnaireConvert.INSTANCE.convertList(questionnaires);
+        System.out.println("DEBUG: 最终返回的问卷数量: " + result.size());
+        return result;
+    }
+
     // ==================== App端接口实现 ====================
 
     @Override

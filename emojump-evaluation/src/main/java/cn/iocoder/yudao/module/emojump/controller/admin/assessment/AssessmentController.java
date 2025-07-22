@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.validation.Valid;
+import java.util.List;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 
@@ -92,5 +93,13 @@ public class AssessmentController {
     @PreAuthorize("@ss.hasPermission('emojump:assessment:query')")
     public CommonResult<PageResult<QuestionnaireRespVO>> getAvailableQuestionnaires(@Valid QuestionnairePageReqVO pageVO) {
         return success(assessmentService.getAvailableQuestionnaires(pageVO));
+    }
+
+    @GetMapping("/questionnaires")
+    @Operation(summary = "根据测评ID获取关联的问卷列表")
+    @Parameter(name = "assessmentId", description = "测评编号", required = true, example = "1")
+    @PreAuthorize("@ss.hasPermission('emojump:assessment:query')")
+    public CommonResult<List<QuestionnaireRespVO>> getQuestionnairesByAssessmentId(@RequestParam("assessmentId") Long assessmentId) {
+        return success(assessmentService.getQuestionnairesByAssessmentId(assessmentId));
     }
 } 
