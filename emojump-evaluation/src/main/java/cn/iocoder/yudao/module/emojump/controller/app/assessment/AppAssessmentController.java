@@ -11,6 +11,7 @@ import cn.iocoder.yudao.module.emojump.controller.app.assessment.vo.AppQuestionn
 import cn.iocoder.yudao.module.emojump.service.assessment.AssessmentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -36,8 +37,9 @@ public class AppAssessmentController {
     @GetMapping("/get")
     @Operation(summary = "获得测评信息")
     @Parameter(name = "id", description = "编号", required = true, example = "1024")
-    public CommonResult<AppAssessmentRespVO> getAssessment(@RequestParam("id") Long id) {
-        return success(assessmentService.getAppAssessment(id));
+    @Parameter(name = "babyId", description = "宝宝编号", required = true, example = "1024")
+    public CommonResult<AppAssessmentRespVO> getAssessment(@RequestParam("id") Long id, @RequestParam("babyId") Long babyId) {
+        return success(assessmentService.getAppAssessment(id, babyId));
     }
 
     @GetMapping("/list")
@@ -54,9 +56,13 @@ public class AppAssessmentController {
 
     @PostMapping("/participate")
     @Operation(summary = "参与测评")
-    @Parameter(name = "id", description = "测评编号", required = true)
-    public CommonResult<AppAssessmentParticipateRespVO> participateAssessment(@RequestParam("id") Long id) {
-        return success(assessmentService.participateAssessment(id));
+    @Parameters({
+        @Parameter(name = "assessmentId", description = "测评编号", required = true),
+        @Parameter(name = "babyId", description = "宝宝编号", required = true)
+    })
+    public CommonResult<AppAssessmentParticipateRespVO> participateAssessment(@RequestParam("assessmentId") Long assessmentId,
+                                                                             @RequestParam("babyId") Long babyId) {
+        return success(assessmentService.participateAssessment(assessmentId, babyId));
     }
 
     @PostMapping("/submit-questionnaire")
@@ -73,16 +79,17 @@ public class AppAssessmentController {
         return success(true);
     }
 
-    @GetMapping("/my-assessments")
-    @Operation(summary = "获得我的测评列表")
-    public CommonResult<PageResult<AppAssessmentRespVO>> getMyAssessmentList(@Valid AppAssessmentPageReqVO pageReqVO) {
-        return success(assessmentService.getMyAssessmentPage(pageReqVO));
+    @GetMapping("/baby-assessments")
+    @Operation(summary = "获得宝宝的测评列表")
+    public CommonResult<PageResult<AppAssessmentRespVO>> getBabyAssessmentList(@Valid AppAssessmentPageReqVO pageReqVO) {
+        return success(assessmentService.getBabyAssessmentPage(pageReqVO));
     }
 
     @GetMapping("/result")
-    @Operation(summary = "获得测评结果")
+    @Operation(summary = "查看测评结果")
     @Parameter(name = "id", description = "测评编号", required = true, example = "1024")
-    public CommonResult<AppAssessmentResultRespVO> getAssessmentResult(@RequestParam("id") Long id) {
-        return success(assessmentService.getAssessmentResult(id));
+    @Parameter(name = "babyId", description = "宝宝编号", required = true, example = "1024")
+    public CommonResult<AppAssessmentResultRespVO> getAssessmentResult(@RequestParam("id") Long id, @RequestParam("babyId") Long babyId) {
+        return success(assessmentService.getAssessmentResult(id, babyId));
     }
 } 

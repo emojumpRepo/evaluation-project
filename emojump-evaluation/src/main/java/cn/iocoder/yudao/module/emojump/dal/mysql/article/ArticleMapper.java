@@ -29,7 +29,6 @@ public interface ArticleMapper extends BaseMapperX<ArticleDO> {
                 .eqIfPresent(ArticleDO::getStatus, reqVO.getStatus())
                 .betweenIfPresent(ArticleDO::getCreateTime, reqVO.getCreateTime())
                 .betweenIfPresent(ArticleDO::getPublishTime, reqVO.getPublishTime())
-                .orderByDesc(ArticleDO::getPublishTime)
                 .orderByDesc(ArticleDO::getId));
     }
 
@@ -44,7 +43,7 @@ public interface ArticleMapper extends BaseMapperX<ArticleDO> {
                 .eq(ArticleDO::getStatus, 1) // 只查询已发布的文章
                 .likeIfPresent(ArticleDO::getTitle, reqVO.getTitle())
                 .eqIfPresent(ArticleDO::getCategory, reqVO.getCategory())
-                .orderByDesc(ArticleDO::getPublishTime)); // 按发布时间降序
+                .orderByDesc(ArticleDO::getId));
     }
 
     /**

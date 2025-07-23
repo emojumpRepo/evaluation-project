@@ -18,7 +18,7 @@ public interface AssessmentResultMapper extends BaseMapperX<AssessmentResultDO> 
     default PageResult<AssessmentResultDO> selectPage(AssessmentResultPageReqVO reqVO) {
         return selectPage(reqVO, new LambdaQueryWrapperX<AssessmentResultDO>()
                 .eqIfPresent(AssessmentResultDO::getAssessmentId, reqVO.getAssessmentId())
-                .eqIfPresent(AssessmentResultDO::getUserId, reqVO.getUserId())
+                .eqIfPresent(AssessmentResultDO::getBabyId, reqVO.getBabyId())
                 .eqIfPresent(AssessmentResultDO::getStatus, reqVO.getStatus())
                 .betweenIfPresent(AssessmentResultDO::getCompletedTime, reqVO.getCompletedTime())
                 .orderByDesc(AssessmentResultDO::getId));

@@ -202,7 +202,7 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
 
     @Override
     @Transactional
-    public void recordQuestionnaireAccess(Long id) {
+    public void recordQuestionnaireAccess(Long id, Long babyId) {
         QuestionnaireDO questionnaire = questionnaireMapper.selectById(id);
         if (questionnaire == null) {
             throw exception(QUESTIONNAIRE_NOT_EXISTS);
@@ -214,7 +214,7 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
         // 记录访问日志
         QuestionnaireAccessDO accessLog = new QuestionnaireAccessDO();
         accessLog.setQuestionnaireId(id);
-        accessLog.setUserId(getLoginUserId());
+        accessLog.setBabyId(babyId);
         accessLog.setIpAddress(ServletUtils.getClientIP());
         accessLog.setUserAgent(ServletUtils.getUserAgent());
         accessLog.setAccessTime(LocalDateTime.now());

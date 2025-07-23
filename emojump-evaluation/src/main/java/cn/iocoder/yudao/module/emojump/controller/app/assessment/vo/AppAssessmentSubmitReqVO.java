@@ -20,4 +20,6 @@ public class AppAssessmentSubmitReqVO {
     @Schema(description = "完成时间", example = "2024-01-01 10:00:00")
     private LocalDateTime completedTime;
     
+    @Schema(description = "宝宝编号", example = "1")
+    private Long babyId;
 } 

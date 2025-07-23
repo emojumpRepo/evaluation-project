@@ -32,6 +32,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
+import cn.iocoder.yudao.module.member.service.baby.MemberBabyService;
+import cn.iocoder.yudao.module.member.dal.dataobject.baby.MemberBabyDO;
+import cn.iocoder.yudao.module.emojump.dal.dataobject.questionnaire.QuestionnaireAccessDO;
+import cn.iocoder.yudao.module.emojump.dal.mysql.questionnaire.QuestionnaireAccessMapper;
 
 
 import javax.annotation.Resource;
@@ -68,6 +72,12 @@ public class AssessmentServiceImpl implements AssessmentService {
 
     @Resource
     private QuestionnaireResultMapper questionnaireResultMapper;
+
+    @Resource
+    private MemberBabyService memberBabyService;
+
+    @Resource
+    private QuestionnaireAccessMapper questionnaireAccessMapper;
 
     @Override
     @Transactional
@@ -222,7 +232,7 @@ public class AssessmentServiceImpl implements AssessmentService {
     // ==================== App端接口实现 ====================
 
     @Override
-    public AppAssessmentRespVO getAppAssessment(Long id) {
+    public AppAssessmentRespVO getAppAssessment(Long id, Long babyId) {
         AssessmentDO assessment = assessmentMapper.selectById(id);
         if (assessment == null) {
             throw exception(ASSESSMENT_NOT_EXISTS);
@@ -233,11 +243,10 @@ public class AssessmentServiceImpl implements AssessmentService {
         // 填充问卷信息
         fillAppAssessmentQuestionnaires(respVO);
 
-        // 检查用户是否已参与
-        Long userId = getLoginUserId();
-        if (userId != null) {
+        // 检查宝宝是否已参与
+        if (babyId != null) {
             AssessmentResultDO result = assessmentResultMapper.selectOne(
-                    AssessmentResultDO::getAssessmentId, id, AssessmentResultDO::getUserId, userId);
+                    AssessmentResultDO::getAssessmentId, id, AssessmentResultDO::getBabyId, babyId);
             respVO.setIsParticipated(result != null);
             if (result != null) {
                 respVO.setParticipateTime(result.getCreateTime());
@@ -253,32 +262,7 @@ public class AssessmentServiceImpl implements AssessmentService {
     public PageResult<AppAssessmentRespVO> getAppAssessmentPage(AppAssessmentPageReqVO pageReqVO) {
         PageResult<AssessmentDO> pageResult = assessmentMapper.selectPage(pageReqVO);
         PageResult<AppAssessmentRespVO> convertPage = AssessmentConvert.INSTANCE.convertAppPage(pageResult);
-
-        // 填充问卷信息和参与状态
-        Long userId = getLoginUserId();
-        if (userId != null) {
-            List<Long> assessmentIds = CollectionUtils.convertList(convertPage.getList(), AppAssessmentRespVO::getId);
-            if (!assessmentIds.isEmpty()) {
-                List<AssessmentResultDO> results = assessmentResultMapper.selectList(new LambdaQueryWrapperX<AssessmentResultDO>()
-                        .in(AssessmentResultDO::getAssessmentId, assessmentIds).eq(AssessmentResultDO::getUserId, userId));
-                Map<Long, AssessmentResultDO> resultMap = CollectionUtils.convertMap(results, AssessmentResultDO::getAssessmentId);
-
-                for (AppAssessmentRespVO assessmentVO : convertPage.getList()) {
-                    fillAppAssessmentQuestionnaires(assessmentVO);
-                    AssessmentResultDO result = resultMap.get(assessmentVO.getId());
-                    assessmentVO.setIsParticipated(result != null);
-                    if (result != null) {
-                        assessmentVO.setParticipateTime(result.getCreateTime());
-                    }
-                }
-            }
-        } else {
-            convertPage.getList().forEach(assessmentVO -> {
-                fillAppAssessmentQuestionnaires(assessmentVO);
-                assessmentVO.setIsParticipated(false);
-            });
-        }
-
+        fillAssessmentParticipateStatus(convertPage.getList(), getLoginUserId());
         return convertPage;
     }
 
@@ -286,39 +270,14 @@ public class AssessmentServiceImpl implements AssessmentService {
     public PageResult<AppAssessmentRespVO> getPublishedAssessmentPage(AppAssessmentPageReqVO pageReqVO) {
         PageResult<AssessmentDO> pageResult = assessmentMapper.selectPublishedPage(pageReqVO);
         PageResult<AppAssessmentRespVO> convertPage = AssessmentConvert.INSTANCE.convertAppPage(pageResult);
-
-        // 填充问卷信息和参与状态
-        Long userId = getLoginUserId();
-        if (userId != null) {
-            List<Long> assessmentIds = CollectionUtils.convertList(convertPage.getList(), AppAssessmentRespVO::getId);
-            if (!assessmentIds.isEmpty()) {
-                List<AssessmentResultDO> results = assessmentResultMapper.selectList(new LambdaQueryWrapperX<AssessmentResultDO>()
-                        .in(AssessmentResultDO::getAssessmentId, assessmentIds).eq(AssessmentResultDO::getUserId, userId));
-                Map<Long, AssessmentResultDO> resultMap = CollectionUtils.convertMap(results, AssessmentResultDO::getAssessmentId);
-
-                for (AppAssessmentRespVO assessmentVO : convertPage.getList()) {
-                    fillAppAssessmentQuestionnaires(assessmentVO);
-                    AssessmentResultDO result = resultMap.get(assessmentVO.getId());
-                    assessmentVO.setIsParticipated(result != null);
-                    if (result != null) {
-                        assessmentVO.setParticipateTime(result.getCreateTime());
-                    }
-                }
-            }
-        } else {
-            convertPage.getList().forEach(assessmentVO -> {
-                fillAppAssessmentQuestionnaires(assessmentVO);
-                assessmentVO.setIsParticipated(false);
-            });
-        }
-
+        fillAssessmentParticipateStatus(convertPage.getList(), getLoginUserId());
         return convertPage;
     }
 
     @Override
     @Transactional
-    public AppAssessmentParticipateRespVO participateAssessment(Long id) {
-        AssessmentDO assessment = assessmentMapper.selectById(id);
+    public AppAssessmentParticipateRespVO participateAssessment(Long assessmentId, Long babyId) {
+        AssessmentDO assessment = assessmentMapper.selectById(assessmentId);
         if (assessment == null) {
             throw exception(ASSESSMENT_NOT_EXISTS);
         }
@@ -339,25 +298,24 @@ public class AssessmentServiceImpl implements AssessmentService {
             throw exception(ASSESSMENT_FULL);
         }
 
-        // 获取当前用户ID
-        Long userId = getLoginUserId();
-
-        // 检查是否已参与
-        AssessmentResultDO existingResult = assessmentResultMapper.selectOne(AssessmentResultDO::getAssessmentId, id, AssessmentResultDO::getUserId, userId);
+        // 检查宝宝是否已参与测评
+        AssessmentResultDO existingResult = assessmentResultMapper.selectOne(
+            AssessmentResultDO::getAssessmentId, assessmentId,
+            AssessmentResultDO::getBabyId, babyId
+        );
         if (existingResult != null) {
             throw exception(ASSESSMENT_ALREADY_PARTICIPATED);
         }
 
         // 创建测评结果记录
         AssessmentResultDO assessmentResult = new AssessmentResultDO();
-        assessmentResult.setAssessmentId(id);
-        assessmentResult.setUserId(userId);
-        assessmentResult.setStatus(0); //进行中
+        assessmentResult.setAssessmentId(assessmentId);
+        assessmentResult.setBabyId(babyId);
+        assessmentResult.setStatus(0); // 进行中
         assessmentResultMapper.insert(assessmentResult);
 
-
         // 获取测评关联的问卷信息
-        List<AssessmentQuestionnaireDO> assessmentQuestionnaires = assessmentQuestionnaireMapper.selectByAssessmentId(id);
+        List<AssessmentQuestionnaireDO> assessmentQuestionnaires = assessmentQuestionnaireMapper.selectByAssessmentId(assessmentId);
         if (assessmentQuestionnaires.isEmpty()) {
             throw exception(QUESTIONNAIRE_NOT_EXISTS);
         }
@@ -389,7 +347,7 @@ public class AssessmentServiceImpl implements AssessmentService {
         // 创建参与响应
         AppAssessmentParticipateRespVO respVO = new AppAssessmentParticipateRespVO();
         respVO.setAssessmentResultId(assessmentResult.getId());
-        respVO.setAssessmentId(id);
+        respVO.setAssessmentId(assessmentId);
         respVO.setAssessmentTitle(assessment.getTitle());
         respVO.setQuestionnaires(participateQuestionnaires);
         respVO.setAccessToken(generateAccessToken());
@@ -400,9 +358,9 @@ public class AssessmentServiceImpl implements AssessmentService {
     @Override
     @Transactional
     public void submitQuestionnaireResult(AppQuestionnaireSubmitReqVO submitReqVO) {
-        // 1. 校验测评结果存在，并且属于当前用户
+        // 1. 校验测评结果存在
         AssessmentResultDO result = assessmentResultMapper.selectById(submitReqVO.getAssessmentResultId());
-        if (result == null || !result.getUserId().equals(getLoginUserId())) {
+        if (result == null) {
             throw exception(ASSESSMENT_NOT_EXISTS); // 或者更具体的错误码，例如 ASSESSMENT_RESULT_NOT_FOUND
         }
 
@@ -431,16 +389,27 @@ public class AssessmentServiceImpl implements AssessmentService {
             throw exception(ASSESSMENT_NOT_EXISTS);
         }
 
-        Long userId = getLoginUserId();
-        AssessmentResultDO result = assessmentResultMapper.selectOne(
-                AssessmentResultDO::getAssessmentId, submitReqVO.getAssessmentId(),
-                AssessmentResultDO::getUserId, userId);
-
-        if (result == null) {
-            throw exception(ASSESSMENT_NOT_EXISTS); // 用户未参与该测评
+        Long babyId = submitReqVO.getBabyId();
+        // 1. 获取关联问卷ID列表
+        List<AssessmentQuestionnaireDO> assessmentQuestionnaires = assessmentQuestionnaireMapper.selectByAssessmentId(submitReqVO.getAssessmentId());
+        List<Long> questionnaireIds = CollectionUtils.convertList(assessmentQuestionnaires, AssessmentQuestionnaireDO::getQuestionnaireId);
+        // 2. 检查每个问卷是否有访问记录
+        for (Long questionnaireId : questionnaireIds) {
+            long count = questionnaireAccessMapper.countByQuestionnaireIdAndBabyId(questionnaireId, babyId);
+            if (count == 0) {
+                throw exception(QUESTIONNAIRE_NOT_COMPLETED); // 需定义此异常码
+            }
         }
 
-        // 更新测评结果为已完成
+        // 3. 查询测评结果
+        AssessmentResultDO result = assessmentResultMapper.selectOne(
+                AssessmentResultDO::getAssessmentId, submitReqVO.getAssessmentId(),
+                AssessmentResultDO::getBabyId, babyId);
+        if (result == null) {
+            throw exception(ASSESSMENT_NOT_EXISTS); // 宝宝未参与该测评
+        }
+
+        // 4. 更新测评结果为已完成
         result.setStatus(1); // 已完成
         result.setCompletedTime(LocalDateTime.now());
         // TODO: 根据所有问卷结果计算总分、总评级和总报告
@@ -449,17 +418,16 @@ public class AssessmentServiceImpl implements AssessmentService {
         // result.setOverallReport(...)
         assessmentResultMapper.updateById(result);
 
-        // 更新测评的当前参与人数
+        // 5. 更新测评的当前参与人数
         assessmentMapper.updateById(new AssessmentDO().setId(submitReqVO.getAssessmentId())
                 .setCurrentParticipants(assessment.getCurrentParticipants() + 1));
     }
 
     @Override
-    public PageResult<AppAssessmentRespVO> getMyAssessmentPage(AppAssessmentPageReqVO pageReqVO) {
-        Long userId = getLoginUserId();
-        // 1. 查询我参与的测评结果
+    public PageResult<AppAssessmentRespVO> getBabyAssessmentPage(AppAssessmentPageReqVO pageReqVO) {
+        // 1. 查询宝宝参与的测评结果
         List<AssessmentResultDO> myResults = assessmentResultMapper.selectList(
-                AssessmentResultDO::getUserId, userId);
+                AssessmentResultDO::getBabyId, pageReqVO.getBabyId());
         if (myResults == null || myResults.isEmpty()) {
             return PageResult.empty();
         }
@@ -489,11 +457,10 @@ public class AssessmentServiceImpl implements AssessmentService {
     }
 
     @Override
-    public AppAssessmentResultRespVO getAssessmentResult(Long id) {
-        Long userId = getLoginUserId();
+    public AppAssessmentResultRespVO getAssessmentResult(Long id, Long babyId) {
         AssessmentResultDO result = assessmentResultMapper.selectOne(
                 AssessmentResultDO::getAssessmentId, id,
-                AssessmentResultDO::getUserId, userId);
+                AssessmentResultDO::getBabyId, babyId);
 
         if (result == null) {
             throw exception(ASSESSMENT_NOT_EXISTS); // 或者 RESULT_NOT_FOUND
@@ -694,6 +661,52 @@ public class AssessmentServiceImpl implements AssessmentService {
         // 9. 执行更新操作
         if (!toUpdate.isEmpty()) {
             toUpdate.forEach(assessmentQuestionnaireMapper::updateById);
+        }
+    }
+
+    /**
+     * 填充测评的问卷信息和参与状态（支持多宝宝）
+     */
+    private void fillAssessmentParticipateStatus(List<AppAssessmentRespVO> assessmentList, Long userId) {
+        if (userId != null) {
+            // 获取当前用户所有宝宝
+            List<MemberBabyDO> babyList = memberBabyService.getBabyListByUserId(userId);
+            List<Long> babyIds = babyList.stream().map(MemberBabyDO::getId).collect(Collectors.toList());
+            List<Long> assessmentIds = CollectionUtils.convertList(assessmentList, AppAssessmentRespVO::getId);
+            if (!assessmentIds.isEmpty() && !babyIds.isEmpty()) {
+                // 查询所有宝宝在所有测评下的参与记录
+                List<AssessmentResultDO> results = assessmentResultMapper.selectList(new LambdaQueryWrapperX<AssessmentResultDO>()
+                        .in(AssessmentResultDO::getAssessmentId, assessmentIds)
+                        .in(AssessmentResultDO::getBabyId, babyIds));
+                // Map<测评ID, 是否有宝宝参与过>
+                Map<Long, Boolean> assessmentParticipatedMap = new HashMap<>();
+                for (AssessmentResultDO result : results) {
+                    assessmentParticipatedMap.put(result.getAssessmentId(), true);
+                }
+                // Map<测评ID, 参与时间>（取第一个参与的时间）
+                Map<Long, LocalDateTime> assessmentParticipateTimeMap = new HashMap<>();
+                for (AssessmentResultDO result : results) {
+                    assessmentParticipateTimeMap.putIfAbsent(result.getAssessmentId(), result.getCreateTime());
+                }
+                for (AppAssessmentRespVO assessmentVO : assessmentList) {
+                    fillAppAssessmentQuestionnaires(assessmentVO);
+                    boolean participated = assessmentParticipatedMap.getOrDefault(assessmentVO.getId(), false);
+                    assessmentVO.setIsParticipated(participated);
+                    if (participated) {
+                        assessmentVO.setParticipateTime(assessmentParticipateTimeMap.get(assessmentVO.getId()));
+                    }
+                }
+            } else {
+                assessmentList.forEach(assessmentVO -> {
+                    fillAppAssessmentQuestionnaires(assessmentVO);
+                    assessmentVO.setIsParticipated(false);
+                });
+            }
+        } else {
+            assessmentList.forEach(assessmentVO -> {
+                fillAppAssessmentQuestionnaires(assessmentVO);
+                assessmentVO.setIsParticipated(false);
+            });
         }
     }
 }

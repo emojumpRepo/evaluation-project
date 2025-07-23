@@ -23,6 +23,7 @@ public interface ErrorCodeConstants {
     ErrorCode QUESTIONNAIRE_ALREADY_PUBLISHED = new ErrorCode(1_008_002_002, "问卷已发布");
     ErrorCode QUESTIONNAIRE_EXPIRED = new ErrorCode(1_008_002_003, "问卷已过期");
     ErrorCode QUESTIONNAIRE_LINK_INVALID = new ErrorCode(1_008_002_004, "问卷链接无效");
+    ErrorCode QUESTIONNAIRE_NOT_COMPLETED = new ErrorCode(1_008_002_005, "问卷未完成");
 
     //========== 会员文章 1-008-003-000 ==========
     ErrorCode ARTICLE_NOT_EXISTS = new ErrorCode(1_008_003_000, "会员文章不存在");

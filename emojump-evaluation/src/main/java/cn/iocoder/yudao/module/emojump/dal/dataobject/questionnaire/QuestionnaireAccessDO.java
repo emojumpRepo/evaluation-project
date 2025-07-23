@@ -35,9 +35,9 @@ public class QuestionnaireAccessDO extends TenantBaseDO {
     private Long questionnaireId;
 
     /**
-     * 用户ID
+     * 宝宝ID
      */
-    private Long userId;
+    private Long babyId;
 
     /**
      * 访问令牌
@@ -58,5 +58,4 @@ public class QuestionnaireAccessDO extends TenantBaseDO {
      * 访问时间
      */
     private LocalDateTime accessTime;
-
 }

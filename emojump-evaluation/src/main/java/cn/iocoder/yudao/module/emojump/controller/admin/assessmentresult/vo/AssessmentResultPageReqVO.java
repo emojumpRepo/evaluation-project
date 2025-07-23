@@ -20,8 +20,8 @@ public class AssessmentResultPageReqVO extends PageParam {
     @Schema(description = "测评ID", example = "1024")
     private Long assessmentId;
 
-    @Schema(description = "用户ID", example = "2048")
-    private Long userId;
+    @Schema(description = "宝宝ID", example = "2048")
+    private Long babyId;
 
     @Schema(description = "状态：0-进行中 1-已完成", example = "1")
     private Integer status;
