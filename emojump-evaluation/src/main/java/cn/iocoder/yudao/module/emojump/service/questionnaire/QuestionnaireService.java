@@ -115,8 +115,9 @@ public interface QuestionnaireService {
      * 记录问卷访问
      *
      * @param id 编号
+     * @param babyId 宝宝编号
      */
-    void recordQuestionnaireAccess(Long id);
+    void recordQuestionnaireAccess(Long id, Long babyId);
 
     /**
      * 获得热门问卷分页

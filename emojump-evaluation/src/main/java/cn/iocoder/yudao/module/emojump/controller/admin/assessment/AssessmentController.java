@@ -4,6 +4,7 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.QuestionnairePageReqVO;
 import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.QuestionnaireRespVO;
+import cn.iocoder.yudao.module.emojump.controller.admin.assessment.AssessmentUpdateReqVO;
 import cn.iocoder.yudao.module.emojump.service.assessment.AssessmentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

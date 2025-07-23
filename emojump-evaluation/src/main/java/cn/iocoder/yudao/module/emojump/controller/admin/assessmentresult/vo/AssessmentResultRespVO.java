@@ -20,11 +20,11 @@ public class AssessmentResultRespVO {
     @Schema(description = "测评标题", example = "入学常规测评")
     private String assessmentTitle;
 
-    @Schema(description = "用户ID", required = true, example = "2048")
-    private Long userId;
+    @Schema(description = "宝宝ID", required = true, example = "2048")
+    private Long babyId;
 
-    @Schema(description = "用户名", example = "zhangsan")
-    private String username;
+    @Schema(description = "宝宝名称", example = "张三")
+    private String babyName;
 
     @Schema(description = "总体得分", example = "88.5")
     private BigDecimal overallScore;

@@ -25,8 +25,9 @@ public interface AssessmentResultService {
      * 获得测评结果
      *
      * @param id 编号
+     * @param babyId 宝宝编号
      * @return 测评结果
      */
-    AssessmentResultRespVO getAssessmentResult(Long id);
+    AssessmentResultRespVO getAssessmentResult(Long id, Long babyId);
 
 }

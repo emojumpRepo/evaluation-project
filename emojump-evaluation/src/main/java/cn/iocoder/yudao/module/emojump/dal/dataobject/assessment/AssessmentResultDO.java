@@ -36,9 +36,9 @@ public class AssessmentResultDO extends TenantBaseDO {
     private Long assessmentId;
 
     /**
-     * 用户ID
+     * 宝宝ID
      */
-    private Long userId;
+    private Long babyId;
 
     /**
      * 总体得分

@@ -52,8 +52,9 @@ public class AppQuestionnaireController {
     @PostMapping("/record-access")
     @Operation(summary = "记录问卷访问")
     @Parameter(name = "id", description = "编号", required = true)
-    public CommonResult<Boolean> recordQuestionnaireAccess(@RequestParam("id") Long id) {
-        questionnaireService.recordQuestionnaireAccess(id);
+    @Parameter(name = "babyId", description = "宝宝编号", required = true)
+    public CommonResult<Boolean> recordQuestionnaireAccess(@RequestParam("id") Long id, @RequestParam("babyId") Long babyId) {
+        questionnaireService.recordQuestionnaireAccess(id, babyId);
         return success(true);
     }
 

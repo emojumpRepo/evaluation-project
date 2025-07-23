@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS `emo_assessment` (
   `start_time` datetime COMMENT '开始时间',
   `end_time` datetime COMMENT '结束时间',
   `need_appointment` bit(1) DEFAULT b'0' COMMENT '是否需要预约',
+  `is_repeatable` bit(1) DEFAULT b'0' COMMENT '是否可以重复测评',
   `max_participants` int COMMENT '最大参与人数',
   `current_participants` int DEFAULT 0 COMMENT '当前参与人数',
   `remark` text COMMENT '备注',
@@ -83,7 +84,7 @@ CREATE TABLE IF NOT EXISTS `emo_assessment_questionnaire` (
 CREATE TABLE IF NOT EXISTS `emo_assessment_result` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '结果编号',
   `assessment_id` bigint NOT NULL COMMENT '测评ID',
-  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `baby_id` bigint NOT NULL COMMENT '宝宝ID',
   `overall_score` decimal(10,2) COMMENT '总体得分',
   `overall_level` varchar(50) COMMENT '总体评级',
   `overall_report` text COMMENT '总体测评报告',
@@ -96,9 +97,9 @@ CREATE TABLE IF NOT EXISTS `emo_assessment_result` (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `uk_assessment_user`(`assessment_id` ASC, `user_id` ASC) USING BTREE,
+  UNIQUE INDEX `uk_assessment_baby`(`assessment_id` ASC, `baby_id` ASC) USING BTREE,
   INDEX `idx_assessment_id`(`assessment_id` ASC) USING BTREE,
-  INDEX `idx_user_id`(`user_id` ASC) USING BTREE,
+  INDEX `idx_baby_id`(`baby_id` ASC) USING BTREE,
   INDEX `idx_completed_time`(`completed_time` ASC) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='测评结果表';
 
@@ -129,7 +130,7 @@ CREATE TABLE IF NOT EXISTS `emo_questionnaire_result` (
 CREATE TABLE IF NOT EXISTS `emo_questionnaire_access` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '访问记录编号',
   `questionnaire_id` bigint NOT NULL COMMENT '问卷ID',
-  `user_id` bigint COMMENT '用户ID',
+  `baby_id` bigint COMMENT '宝宝ID',
   `access_token` varchar(64) COMMENT '访问令牌',
   `ip_address` varchar(45) COMMENT 'IP地址',
   `user_agent` varchar(500) COMMENT '用户代理',
@@ -142,7 +143,7 @@ CREATE TABLE IF NOT EXISTS `emo_questionnaire_access` (
   `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_questionnaire_id`(`questionnaire_id` ASC) USING BTREE,
-  INDEX `idx_user_id`(`user_id` ASC) USING BTREE,
+  INDEX `idx_baby_id`(`baby_id` ASC) USING BTREE,
   INDEX `idx_access_time`(`access_time` ASC) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='问卷访问记录表';
 

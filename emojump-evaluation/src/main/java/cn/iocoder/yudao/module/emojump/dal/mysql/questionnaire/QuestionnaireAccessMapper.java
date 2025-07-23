@@ -11,4 +11,14 @@ import org.apache.ibatis.annotations.Mapper;
  */
 @Mapper
 public interface QuestionnaireAccessMapper extends BaseMapperX<QuestionnaireAccessDO> {
+
+    /**
+     * 根据问卷ID和宝宝ID查询访问记录数量
+     */
+    default long countByQuestionnaireIdAndBabyId(Long questionnaireId, Long babyId) {
+    return selectCount(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<QuestionnaireAccessDO>()
+            .eq(QuestionnaireAccessDO::getQuestionnaireId, questionnaireId)
+            .eq(QuestionnaireAccessDO::getBabyId, babyId)
+    );
+}
 }

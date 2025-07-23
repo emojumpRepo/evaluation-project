@@ -79,6 +79,11 @@ public class AssessmentDO extends TenantBaseDO {
     private Boolean needAppointment;
 
     /**
+     * 是否可以重复测评
+     */
+    private Boolean isRepeatable;
+
+    /**
      * 最大参与人数
      */
     private Integer maxParticipants;

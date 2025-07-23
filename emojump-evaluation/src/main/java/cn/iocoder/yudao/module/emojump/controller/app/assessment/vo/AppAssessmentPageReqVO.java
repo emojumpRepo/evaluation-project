@@ -15,5 +15,8 @@ public class AppAssessmentPageReqVO extends PageParam {
     
     @Schema(description = "测评状态", example = "1")
     private Integer status;
-    
+
+    // 获得宝宝的测评列表需要
+    @Schema(description = "宝宝编号", example = "1")
+    private Long babyId;
 } 

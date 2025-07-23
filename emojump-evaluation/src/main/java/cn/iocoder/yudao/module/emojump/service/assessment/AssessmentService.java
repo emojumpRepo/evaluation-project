@@ -96,9 +96,10 @@ public interface AssessmentService {
      * 获得测评信息（App端）
      *
      * @param id 编号
+     * @param babyId 宝宝编号
      * @return 测评信息
      */
-    AppAssessmentRespVO getAppAssessment(Long id);
+    AppAssessmentRespVO getAppAssessment(Long id, Long babyId);
 
     /**
      * 获得测评分页（App端）
@@ -119,10 +120,11 @@ public interface AssessmentService {
     /**
      * 参与测评
      *
-     * @param id 测评编号
+     * @param assessmentId 测评编号
+     * @param babyId 宝宝编号
      * @return 参与结果
      */
-    AppAssessmentParticipateRespVO participateAssessment(Long id);
+    AppAssessmentParticipateRespVO participateAssessment(Long assessmentId, Long babyId);
 
     /**
      * 提交单个问卷结果
@@ -144,13 +146,14 @@ public interface AssessmentService {
      * @param pageReqVO 分页查询
      * @return 测评分页
      */
-    PageResult<AppAssessmentRespVO> getMyAssessmentPage(AppAssessmentPageReqVO pageReqVO);
+    PageResult<AppAssessmentRespVO> getBabyAssessmentPage(AppAssessmentPageReqVO pageReqVO);
 
     /**
      * 获得测评结果
      *
      * @param id 测评编号
+     * @param babyId 宝宝编号
      * @return 测评结果
      */
-    AppAssessmentResultRespVO getAssessmentResult(Long id);
+    AppAssessmentResultRespVO getAssessmentResult(Long id, Long babyId);
 } 
