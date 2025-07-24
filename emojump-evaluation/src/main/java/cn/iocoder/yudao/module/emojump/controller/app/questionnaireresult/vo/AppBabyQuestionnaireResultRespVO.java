@@ -39,6 +39,6 @@ public class AppBabyQuestionnaireResultRespVO {
         private Double score;
         
         @Schema(description = "问卷评级", example = "优秀")
-        private String grade;
+        private String level;
     }
 }

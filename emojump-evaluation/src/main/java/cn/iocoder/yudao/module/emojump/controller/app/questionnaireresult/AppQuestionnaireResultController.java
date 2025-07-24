@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.emojump.controller.app.questionnaireresult;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.module.emojump.controller.app.questionnaireresult.vo.AppBabyQuestionnaireResultRespVO;
+import cn.iocoder.yudao.module.emojump.controller.app.questionnaireresult.vo.AppQuestionnaireResultListRespVO;
 import cn.iocoder.yudao.module.emojump.service.questionnaireresult.QuestionnaireResultService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -32,5 +33,14 @@ public class AppQuestionnaireResultController {
     @Parameter(name = "babyId", description = "宝宝编号", required = true, example = "1024")
     public CommonResult<List<AppBabyQuestionnaireResultRespVO>> getBabyQuestionnaireResults(@RequestParam("babyId") Long babyId) {
         return success(questionnaireResultService.getBabyQuestionnaireResults(babyId));
+    }
+
+    @GetMapping("/history-record")
+    @Operation(summary = "获取所有问卷测评结果列表")
+    @Parameter(name = "babyId", description = "宝宝编号", required = true, example = "1024")
+    @Parameter(name = "questionnaireId", description = "问卷编号", required = false, example = "2048")
+    public CommonResult<List<AppQuestionnaireResultListRespVO>> getAllResultsByBabyAndQuestionnaire(@RequestParam("babyId") Long babyId,
+                                                                                                   @RequestParam(value = "questionnaireId", required = false) Long questionnaireId) {
+        return success(questionnaireResultService.getAllResultsByBabyAndQuestionnaire(babyId, questionnaireId));
     }
 }

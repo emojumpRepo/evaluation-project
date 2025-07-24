@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.module.emojump.enums.ErrorCodeConstants.QUESTIONNAIRE_NOT_EXISTS;
+import cn.iocoder.yudao.module.emojump.controller.app.questionnaireresult.vo.AppQuestionnaireResultListRespVO;
 
 /**
  * 问卷结果 Service 实现类
@@ -497,7 +498,7 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
                         item.setQuestionnaireTitle(questionnaireTitleMap.get(questionnaireId));
                         item.setCompletedTime(latestResult.getCompletedTime());
                         item.setScore(latestResult.getScore() != null ? latestResult.getScore().doubleValue() : null);
-                        item.setGrade(latestResult.getLevel());
+                        item.setLevel(latestResult.getLevel());
                         questionnaireResults.add(item);
                     }
                 }
@@ -507,6 +508,31 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
         }
 
         return resultList;
+    }
+
+    @Override
+    public List<AppQuestionnaireResultListRespVO> getAllResultsByBabyAndQuestionnaire(Long babyId, Long questionnaireId) {
+        // 查询所有结果
+        LambdaQueryWrapperX<EmoQuestionnaireResultDO> wrapper = new LambdaQueryWrapperX<EmoQuestionnaireResultDO>()
+                .eqIfPresent(EmoQuestionnaireResultDO::getBabyId, babyId)
+                .eqIfPresent(EmoQuestionnaireResultDO::getQuestionnaireId, questionnaireId)
+                .orderByDesc(EmoQuestionnaireResultDO::getCompletedTime);
+        List<EmoQuestionnaireResultDO> resultList = emoQuestionnaireResultMapper.selectList(wrapper);
+        if (resultList.isEmpty()) {
+            return new java.util.ArrayList<>();
+        }
+        // 去重questionnaireId，查title
+        java.util.Set<Long> questionnaireIds = resultList.stream()
+                .map(EmoQuestionnaireResultDO::getQuestionnaireId)
+                .collect(java.util.stream.Collectors.toSet());
+        java.util.Map<Long, String> titleMap = questionnaireMapper.selectBatchIds(new java.util.ArrayList<>(questionnaireIds))
+                .stream().collect(java.util.stream.Collectors.toMap(q -> q.getId(), q -> q.getTitle()));
+        // 组装VO
+        List<AppQuestionnaireResultListRespVO> voList = QuestionnaireResultConvert.INSTANCE.convertToListVOList(resultList);
+        for (AppQuestionnaireResultListRespVO vo : voList) {
+            vo.setTitle(titleMap.get(vo.getQuestionnaireId()));
+        }
+        return voList;
     }
 
 }
