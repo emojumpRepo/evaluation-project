@@ -106,9 +106,12 @@ CREATE TABLE IF NOT EXISTS `emo_assessment_result` (
 -- 问卷结果表
 CREATE TABLE IF NOT EXISTS `emo_questionnaire_result` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '问卷结果编号',
-  `assessment_result_id` bigint NOT NULL COMMENT '测评结果ID',
+  `assessment_result_id` bigint NULL COMMENT '测评结果ID',
+  `assessment_id` bigint NOT NULL COMMENT '测评ID',
+  `baby_id` bigint NOT NULL COMMENT '宝宝ID',
   `questionnaire_id` bigint NOT NULL COMMENT '问卷ID',
   `result_data` text COMMENT '问卷结果数据（JSON格式）',
+  `answer_data` text COMMENT '用户填写的答案数据（JSON格式）',
   `score` decimal(10,2) COMMENT '问卷得分',
   `level` varchar(50) COMMENT '问卷评级',
   `report` text COMMENT '问卷报告',
