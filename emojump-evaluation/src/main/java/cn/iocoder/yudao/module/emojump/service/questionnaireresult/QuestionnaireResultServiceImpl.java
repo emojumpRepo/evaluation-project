@@ -10,6 +10,8 @@ import cn.iocoder.yudao.module.emojump.convert.questionnaireresult.Questionnaire
 import cn.iocoder.yudao.module.emojump.dal.dataobject.questionnaireresult.EmoQuestionnaireResultDO;
 import cn.iocoder.yudao.module.emojump.dal.mysql.questionnaireresult.EmoQuestionnaireResultMapper;
 
+import cn.iocoder.yudao.module.emojump.service.resultgenerator.QuestionnaireResultGeneratorService;
+import cn.iocoder.yudao.module.emojump.service.resultgenerator.dto.QuestionnaireResultDTO;
 import cn.iocoder.yudao.module.emojump.util.AesDecryptUtil;
 import cn.iocoder.yudao.module.member.service.baby.MemberBabyService;
 import cn.iocoder.yudao.module.emojump.dal.mysql.assessment.AssessmentMapper;
@@ -50,6 +52,9 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
 
     @Resource
     private QuestionnaireMapper questionnaireMapper;
+
+    @Resource
+    private QuestionnaireResultGeneratorService resultGeneratorService;
 
     @Resource
     private AssessmentQuestionnaireMapper assessmentQuestionnaireMapper;
@@ -378,6 +383,32 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
 
             log.info("[submitQuestionnaireAnswer] 问卷答案提交成功，ID: {}, userId: {}, assessmentId: {}, questionnaireId: {}",
                     questionnaireResult.getId(), userId, assessmentId, questionnaireId);
+
+            // 生成问卷结果
+            try {
+                if (resultGeneratorService.isSupported(questionnaireId)) {
+                    log.info("[submitQuestionnaireAnswer] 开始生成问卷结果，问卷ID: {}", questionnaireId);
+
+                    QuestionnaireResultDTO resultDTO = resultGeneratorService.generateResult(
+                            questionnaireId, processedAnswerData);
+
+                    // 更新问卷结果记录
+                    questionnaireResult.setResultData(resultDTO.getResultData());
+                    questionnaireResult.setReport(resultDTO.getReport());
+                    questionnaireResult.setScore(resultDTO.getScore());
+                    questionnaireResult.setLevel(resultDTO.getLevel());
+
+                    emoQuestionnaireResultMapper.updateById(questionnaireResult);
+
+                    log.info("[submitQuestionnaireAnswer] 问卷结果生成成功，总分: {}, 评级: {}",
+                            resultDTO.getScore(), resultDTO.getLevel());
+                } else {
+                    log.warn("[submitQuestionnaireAnswer] 问卷ID {} 暂不支持自动生成结果", questionnaireId);
+                }
+            } catch (Exception e) {
+                log.error("[submitQuestionnaireAnswer] 生成问卷结果失败，但答案已保存: {}", e.getMessage(), e);
+                // 不抛出异常，因为答案已经成功保存
+            }
 
             return questionnaireResult.getId();
 
