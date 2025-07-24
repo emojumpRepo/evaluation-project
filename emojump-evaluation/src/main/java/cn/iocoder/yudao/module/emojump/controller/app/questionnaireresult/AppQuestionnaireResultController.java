@@ -27,7 +27,7 @@ public class AppQuestionnaireResultController {
         System.out.println(getClass() + "生效啦！！！");
     }
 
-    @GetMapping("/questionnaire-results")
+    @GetMapping("/baby-result-list")
     @Operation(summary = "获取宝宝的问卷测评结果")
     @Parameter(name = "babyId", description = "宝宝编号", required = true, example = "1024")
     public CommonResult<List<AppBabyQuestionnaireResultRespVO>> getBabyQuestionnaireResults(@RequestParam("babyId") Long babyId) {
