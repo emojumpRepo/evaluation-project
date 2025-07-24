@@ -15,6 +15,12 @@ import cn.iocoder.yudao.module.member.service.baby.MemberBabyService;
 import cn.iocoder.yudao.module.emojump.dal.mysql.assessment.AssessmentMapper;
 import cn.iocoder.yudao.module.emojump.dal.mysql.questionnaire.QuestionnaireMapper;
 import cn.iocoder.yudao.module.emojump.dal.mysql.assessment.AssessmentQuestionnaireMapper;
+import cn.iocoder.yudao.module.emojump.dal.mysql.assessment.AssessmentResultMapper;
+import cn.iocoder.yudao.module.emojump.controller.app.questionnaireresult.vo.AppBabyQuestionnaireResultRespVO;
+import cn.iocoder.yudao.module.emojump.dal.dataobject.assessment.AssessmentResultDO;
+import cn.iocoder.yudao.module.emojump.dal.dataobject.assessment.AssessmentDO;
+import cn.iocoder.yudao.module.emojump.dal.dataobject.assessment.AssessmentQuestionnaireDO;
+import cn.iocoder.yudao.module.emojump.dal.dataobject.questionnaire.QuestionnaireDO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +31,12 @@ import javax.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.module.emojump.enums.ErrorCodeConstants.QUESTIONNAIRE_NOT_EXISTS;
@@ -53,6 +65,9 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
 
     @Resource
     private AssessmentQuestionnaireMapper assessmentQuestionnaireMapper;
+
+    @Resource
+    private AssessmentResultMapper assessmentResultMapper;
 
     @Override
     public Long createQuestionnaireResult(@Valid QuestionnaireResultCreateReqVO createReqVO) {
@@ -396,6 +411,102 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
                 throw new RuntimeException("提交问卷答案失败: " + errorMessage, e);
             }
         }
+    }
+
+    @Override
+    public List<AppBabyQuestionnaireResultRespVO> getBabyQuestionnaireResults(Long babyId) {
+        // 根据 babyId 获取 assessmentId 列表并去重
+        List<Long> assessmentIds = assessmentResultMapper.selectList(
+                new LambdaQueryWrapperX<AssessmentResultDO>()
+                        .eq(AssessmentResultDO::getBabyId, babyId)
+                        .select(AssessmentResultDO::getAssessmentId)
+        ).stream()
+                .map(AssessmentResultDO::getAssessmentId)
+                .distinct()
+                .collect(Collectors.toList());
+
+        if (assessmentIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        System.out.println("[getBabyQuestionnaireResults] 找到测评ID列表: " + assessmentIds);
+
+        // 获取测评标题
+        Map<Long, String> assessmentTitleMap = assessmentMapper.selectBatchIds(assessmentIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        AssessmentDO::getId,
+                        AssessmentDO::getTitle
+                ));
+
+        // 获取测评关联的问卷ID
+        Map<Long, List<Long>> assessmentQuestionnaireMap = new HashMap<>();
+        Set<Long> allQuestionnaireIds = new HashSet<>();
+        for (Long assessmentId : assessmentIds) {
+            List<AssessmentQuestionnaireDO> questionnaires =
+                    assessmentQuestionnaireMapper.selectByAssessmentId(assessmentId);
+            List<Long> questionnaireIds = questionnaires.stream()
+                    .map(AssessmentQuestionnaireDO::getQuestionnaireId)
+                    .collect(Collectors.toList());
+            assessmentQuestionnaireMap.put(assessmentId, questionnaireIds);
+            allQuestionnaireIds.addAll(questionnaireIds);
+        }
+
+        // 获取问卷标题
+        Map<Long, String> questionnaireTitleMap = questionnaireMapper.selectBatchIds(new ArrayList<>(allQuestionnaireIds))
+                .stream()
+                .collect(Collectors.toMap(
+                        QuestionnaireDO::getId,
+                        QuestionnaireDO::getTitle
+                ));
+
+        // 获取每个问卷的最新结果
+        Map<Long, EmoQuestionnaireResultDO> latestResultMap = new HashMap<>();
+        for (Long questionnaireId : allQuestionnaireIds) {
+            List<EmoQuestionnaireResultDO> results = emoQuestionnaireResultMapper.selectList(
+                    new LambdaQueryWrapperX<EmoQuestionnaireResultDO>()
+                            .eq(EmoQuestionnaireResultDO::getBabyId, babyId)
+                            .eq(EmoQuestionnaireResultDO::getQuestionnaireId, questionnaireId)
+                            .isNotNull(EmoQuestionnaireResultDO::getCompletedTime)
+                            .orderByDesc(EmoQuestionnaireResultDO::getCompletedTime)
+                            .last("LIMIT 1")
+            );
+            if (!results.isEmpty()) {
+                latestResultMap.put(questionnaireId, results.get(0));
+            }
+        }
+
+        // 组装返回数据
+        List<AppBabyQuestionnaireResultRespVO> resultList = new ArrayList<>();
+        for (Long assessmentId : assessmentIds) {
+            AppBabyQuestionnaireResultRespVO result = new AppBabyQuestionnaireResultRespVO();
+            result.setAssessmentId(assessmentId);
+            result.setAssessmentTitle(assessmentTitleMap.get(assessmentId));
+            List<Long> questionnaireIds = assessmentQuestionnaireMap.get(assessmentId);
+            result.setQuestionnaireCount(questionnaireIds != null ? questionnaireIds.size() : 0);
+
+            // 构建问卷结果列表
+            List<AppBabyQuestionnaireResultRespVO.QuestionnaireResultItem> questionnaireResults = new ArrayList<>();
+            if (questionnaireIds != null) {
+                for (Long questionnaireId : questionnaireIds) {
+                    EmoQuestionnaireResultDO latestResult = latestResultMap.get(questionnaireId);
+                    if (latestResult != null) {
+                        AppBabyQuestionnaireResultRespVO.QuestionnaireResultItem item =
+                                new AppBabyQuestionnaireResultRespVO.QuestionnaireResultItem();
+                        item.setQuestionnaireId(questionnaireId);
+                        item.setQuestionnaireTitle(questionnaireTitleMap.get(questionnaireId));
+                        item.setCompletedTime(latestResult.getCompletedTime());
+                        item.setScore(latestResult.getScore() != null ? latestResult.getScore().doubleValue() : null);
+                        item.setGrade(latestResult.getLevel());
+                        questionnaireResults.add(item);
+                    }
+                }
+            }
+            result.setQuestionnaireResults(questionnaireResults);
+            resultList.add(result);
+        }
+
+        return resultList;
     }
 
 }

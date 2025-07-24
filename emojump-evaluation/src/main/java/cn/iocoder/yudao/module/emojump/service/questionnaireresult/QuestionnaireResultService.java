@@ -6,6 +6,7 @@ import cn.iocoder.yudao.module.emojump.controller.admin.questionnaireresult.vo.Q
 import cn.iocoder.yudao.module.emojump.controller.admin.questionnaireresult.vo.QuestionnaireResultPageReqVO;
 import cn.iocoder.yudao.module.emojump.controller.admin.questionnaireresult.vo.QuestionnaireResultUpdateReqVO;
 import cn.iocoder.yudao.module.emojump.dal.dataobject.questionnaireresult.EmoQuestionnaireResultDO;
+import cn.iocoder.yudao.module.emojump.controller.app.questionnaireresult.vo.AppBabyQuestionnaireResultRespVO;
 
 import javax.validation.Valid;
 import java.time.LocalDateTime;
@@ -113,5 +114,13 @@ public interface QuestionnaireResultService {
      * @return 问卷结果ID
      */
     Long submitQuestionnaireAnswer(@Valid QuestionnaireAnswerSubmitReqVO submitReqVO);
+
+    /**
+     * 获取宝宝的问卷测评结果
+     *
+     * @param babyId 宝宝ID
+     * @return 宝宝的问卷测评结果列表
+     */
+    List<AppBabyQuestionnaireResultRespVO> getBabyQuestionnaireResults(Long babyId);
 
 }
