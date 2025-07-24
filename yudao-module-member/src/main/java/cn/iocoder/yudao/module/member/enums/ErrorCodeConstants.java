@@ -61,4 +61,10 @@ public interface ErrorCodeConstants {
     //========== 会员文章 1-004-014-000 ==========
     ErrorCode ARTICLE_NOT_EXISTS = new ErrorCode(1_004_014_000, "会员文章不存在");
 
+    //========== 轮播图 1-004-013-000 ==========
+    ErrorCode CAROUSEL_NOT_EXISTS = new ErrorCode(1_004_013_000, "轮播图不存在");
+
+    //========== 政策配置 1-004-014-000 ==========
+    ErrorCode POLICY_NOT_EXISTS = new ErrorCode(1_004_014_000, "政策配置不存在");
+
 }
