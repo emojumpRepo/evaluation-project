@@ -39,9 +39,8 @@ public abstract class AbstractQuestionnaireResultGenerator implements Questionna
             String resultDataJson = generateResultDataJson(result);
             result.setResultData(resultDataJson);
 
-            // 4. 生成报告内容（富文本格式，适合小程序显示）
-            String reportContent = generateReportHtml(result, answerDTO);
-            result.setReport(reportContent);
+            // 4. 不再生成HTML报告，report字段设为空
+            result.setReport("");
 
             log.info("[{}] 问卷结果生成成功，总分: {}, 评级: {}",
                     getQuestionnaireName(), result.getScore(), result.getLevel());
@@ -89,14 +88,7 @@ public abstract class AbstractQuestionnaireResultGenerator implements Questionna
         }
     }
 
-    /**
-     * 生成报告HTML（子类实现）
-     *
-     * @param result 问卷结果
-     * @param answerDTO 问卷答案
-     * @return HTML字符串
-     */
-    protected abstract String generateReportHtml(QuestionnaireResultDTO result, QuestionnaireAnswerDTO answerDTO);
+
 
     /**
      * 根据分数获取评级
@@ -172,10 +164,14 @@ public abstract class AbstractQuestionnaireResultGenerator implements Questionna
             // 生成基础解释（子类可以重写以提供更专业的解释）
             String interpretation = getDimensionInterpretationWithThreshold(dimension, level, score, thresholds);
 
+            // 生成阈值范围
+            int[] range = getDimensionRangeByLevel(level, thresholds);
+
             QuestionnaireResultDTO.ResultDetail detail = QuestionnaireResultDTO.ResultDetail.builder()
                     .label(dimension)
                     .value(score)
                     .level(level)
+                    .range(range)
                     .interpretation(interpretation)
                     .build();
 
@@ -204,6 +200,22 @@ public abstract class AbstractQuestionnaireResultGenerator implements Questionna
         } else {
             return String.format("%s得分为%d分（>%d分），存在较明显的困难，建议寻求专业指导。",
                     dimension, score, thresholds[1]);
+        }
+    }
+
+    /**
+     * 根据评级和阈值获取分数范围
+     */
+    protected int[] getDimensionRangeByLevel(String level, int[] thresholds) {
+        switch (level) {
+            case "低风险":
+                return new int[]{0, thresholds[0]};
+            case "中度风险":
+                return new int[]{thresholds[0] + 1, thresholds[1]};
+            case "高风险":
+                return new int[]{thresholds[1] + 1, 20}; // 默认最大值20
+            default:
+                return new int[]{0, 20};
         }
     }
 }

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -147,11 +148,19 @@ public class ChildSocialAnxietyQuestionnaireGenerator extends AbstractQuestionna
             interpretation = "总分在正常范围内，整体适应性行为表现良好。";
         }
 
+        // 生成新字段
+        int[] range = getSummaryRange(level);
+        String description = getSummaryDescription(level);
+        QuestionnaireResultDTO.Advice advice = generateSummaryAdvice(level);
+
         return QuestionnaireResultDTO.ResultSummary.builder()
                 .label("总分")
                 .value(totalScore)
                 .level(level)
+                .range(range)
+                .description(description)
                 .interpretation(interpretation)
+                .advice(advice)
                 .build();
     }
 
@@ -174,10 +183,14 @@ public class ChildSocialAnxietyQuestionnaireGenerator extends AbstractQuestionna
             // 生成该维度的解释文本
             String interpretation = getDimensionInterpretation(dimension, level, score, thresholds);
 
+            // 获取该维度的阈值范围
+            int[] range = getDimensionRange(dimension, level, thresholds);
+
             QuestionnaireResultDTO.ResultDetail detail = QuestionnaireResultDTO.ResultDetail.builder()
                     .label(dimension)
                     .value(score)
                     .level(level)
+                    .range(range)
                     .interpretation(interpretation)
                     .build();
 
@@ -247,205 +260,96 @@ public class ChildSocialAnxietyQuestionnaireGenerator extends AbstractQuestionna
         }
     }
 
-    @Override
-    protected String generateReportHtml(QuestionnaireResultDTO result, QuestionnaireAnswerDTO answerDTO) {
-        StringBuilder report = new StringBuilder();
-
-        // 报告标题
-        report.append("<div style='text-align: center; margin-bottom: 20px;'>");
-        report.append("<h1 style='color: #2c3e50; font-size: 24px; margin: 0;'>📊 儿童社交焦虑评估报告</h1>");
-        report.append("</div>");
-
-        // 评估时间
-        report.append("<div style='text-align: center; color: #7f8c8d; margin-bottom: 30px;'>");
-        report.append("🕐 评估时间：")
-              .append(java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH:mm")));
-        report.append("</div>");
-
-        // 总体评估结果
-        report.append("<div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin: 20px 0;'>");
-        report.append("<h2 style='color: white; margin: 0 0 15px 0; font-size: 20px;'>📈 总体评估结果</h2>");
-
-        report.append("<div style='margin-bottom: 10px;'>");
-        report.append("<span style='font-size: 18px; font-weight: bold;'>🎯 总分：").append(result.getSummary().getValue()).append(" 分</span>");
-        report.append("</div>");
-
-        report.append("<div style='margin-bottom: 15px;'>");
-        report.append("<span style='font-size: 18px; font-weight: bold;'>📊 评级：").append(getLevelEmoji(result.getSummary().getLevel()))
-              .append(" <span style='background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 15px;'>").append(result.getSummary().getLevel()).append("</span></span>");
-        report.append("</div>");
-
-        report.append("<div style='line-height: 1.6;'>");
-        report.append("<strong>💡 结果解读：</strong><br>");
-        report.append(result.getSummary().getInterpretation());
-        report.append("</div>");
-        report.append("</div>");
-
-        // 各维度详细结果
-        report.append("<h2 style='color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin: 30px 0 20px 0;'>🔍 各维度详细分析</h2>");
-
-        for (int i = 0; i < result.getDetails().size(); i++) {
-            QuestionnaireResultDTO.ResultDetail detail = result.getDetails().get(i);
-
-            report.append("<div style='margin: 20px 0; padding: 15px; border-left: 4px solid ").append(getLevelColor(detail.getLevel())).append("; background: #f8f9fa; border-radius: 0 8px 8px 0;'>");
-
-            report.append("<h3 style='color: #2c3e50; margin: 0 0 10px 0; font-size: 18px;'>【").append(i + 1).append("】").append(detail.getLabel()).append("</h3>");
-
-            report.append("<div style='margin-bottom: 8px;'>");
-            report.append("<span style='font-weight: bold; color: #3498db;'>得分：").append(detail.getValue()).append(" 分</span>");
-            report.append(" | ");
-            report.append("<span style='font-weight: bold; color: ").append(getLevelColor(detail.getLevel())).append(";'>评级：").append(getLevelEmoji(detail.getLevel()))
-                  .append(" ").append(detail.getLevel()).append("</span>");
-            report.append("</div>");
-
-            report.append("<div style='color: #555; line-height: 1.5;'>");
-            report.append("<strong>解读：</strong>").append(detail.getInterpretation());
-            report.append("</div>");
-
-            report.append("</div>");
-        }
-
-        // 建议与指导
-        report.append("<div style='background: #e8f5e8; padding: 20px; border-radius: 10px; margin: 30px 0; border-left: 5px solid #27ae60;'>");
-        report.append("<h2 style='color: #27ae60; margin: 0 0 15px 0; font-size: 20px;'>💝 专业建议</h2>");
-        report.append("<div style='line-height: 1.6; color: #2c3e50;'>");
-        report.append(formatAdviceWithHtml(generateProfessionalAdvice(result)));
-        report.append("</div>");
-        report.append("</div>");
-
-        // 注意事项
-        report.append("<div style='background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 5px solid #ffc107;'>");
-        report.append("<h3 style='color: #856404; margin: 0 0 10px 0;'>⚠️ 重要提醒</h3>");
-        report.append("<ul style='margin: 0; padding-left: 20px; color: #856404; line-height: 1.5;'>");
-        report.append("<li>本评估结果仅供参考，不能替代专业医学诊断</li>");
-        report.append("<li>如有疑虑，建议咨询专业的儿童心理健康专家</li>");
-        report.append("<li>儿童发展存在个体差异，请结合实际情况综合判断</li>");
-        report.append("</ul>");
-        report.append("</div>");
-
-        // 报告结尾
-        report.append("<div style='text-align: center; margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;'>");
-        report.append("<div style='color: #7f8c8d; margin-bottom: 10px;'>📞 如需进一步咨询，请联系专业机构</div>");
-        report.append("<div style='color: #3498db; font-weight: bold;'>🌟 祝愿孩子健康快乐成长！</div>");
-        report.append("</div>");
-
-        return report.toString();
-    }
-
     /**
-     * 获取评级对应的表情符号
+     * 获取总分的阈值范围
      */
-    private String getLevelEmoji(String level) {
-        if (level.contains("低风险") || level.contains("正常")) {
-            return "✅";
-        } else if (level.contains("中度风险") || level.contains("中等")) {
-            return "⚠️";
+    private int[] getSummaryRange(String level) {
+        if ("低风险".equals(level)) {
+            return new int[]{0, 8};  // 0-8分
+        } else if ("中度风险".equals(level)) {
+            return new int[]{9, 16};  // 9-16分
         } else {
-            return "🚨";
+            return new int[]{17, 36};  // 17-36分
         }
     }
 
     /**
-     * 获取评级对应的颜色
+     * 获取总分的描述
      */
-    private String getLevelColor(String level) {
-        if (level.contains("低风险") || level.contains("正常")) {
-            return "#27ae60";  // 绿色
-        } else if (level.contains("中度风险") || level.contains("中等")) {
-            return "#f39c12";  // 橙色
+    private String getSummaryDescription(String level) {
+        if ("低风险".equals(level)) {
+            return "孩子的社交焦虑水平在正常范围内，社交适应能力良好。";
+        } else if ("中度风险".equals(level)) {
+            return "孩子存在一定程度的社交焦虑，需要适当关注和引导。";
         } else {
-            return "#e74c3c";  // 红色
+            return "孩子的社交焦虑水平较高，建议寻求专业帮助和干预。";
         }
     }
 
     /**
-     * 将建议文本格式化为HTML
+     * 生成总分的建议
      */
-    private String formatAdviceWithHtml(String advice) {
-        // 将换行符转换为<br>标签
-        String formatted = advice.replace("\n\n", "</p><p style='margin: 15px 0;'>")
-                                 .replace("\n", "<br>");
-
-        // 将列表项格式化
-        formatted = formatted.replaceAll("• ([^<]+)", "<li style='margin: 5px 0;'>$1</li>");
-
-        // 包装列表
-        if (formatted.contains("<li")) {
-            formatted = formatted.replaceAll("(<li[^>]*>[^<]+</li>)+", "<ul style='margin: 10px 0; padding-left: 20px;'>$0</ul>");
-        }
-
-        // 包装段落
-        if (!formatted.startsWith("<p")) {
-            formatted = "<p style='margin: 15px 0;'>" + formatted + "</p>";
-        }
-
-        return formatted;
-    }
-
-    /**
-     * 生成专业建议
-     */
-    private String generateProfessionalAdvice(QuestionnaireResultDTO result) {
-        StringBuilder advice = new StringBuilder();
-
-        String level = result.getSummary().getLevel();
-        int totalScore = result.getSummary().getValue();
+    private QuestionnaireResultDTO.Advice generateSummaryAdvice(String level) {
+        List<String> content = new ArrayList<>();
+        String description;
 
         if ("低风险".equals(level)) {
-            advice.append("🎉 您的孩子在社交焦虑方面表现良好！\n\n");
-            advice.append("建议：\n");
-            advice.append("• 继续保持良好的亲子沟通，倾听孩子的想法和感受\n");
-            advice.append("• 鼓励孩子参与适合的社交活动，培养社交技能\n");
-            advice.append("• 给予孩子充分的肯定和支持，增强其自信心\n");
-            advice.append("• 定期关注孩子的情绪变化，及时给予关爱");
-
+            description = "维护良好社交能力的建议";
+            content.add("继续保持良好的亲子沟通，倾听孩子的想法和感受");
+            content.add("鼓励孩子参与适合的社交活动，培养社交技能");
+            content.add("给予孩子充分的肯定和支持，增强其自信心");
+            content.add("定期关注孩子的情绪变化，及时给予关爱");
+            content.add("创造积极正面的社交环境");
         } else if ("中度风险".equals(level)) {
-            advice.append("🤔 您的孩子在社交方面存在一定程度的焦虑，需要适当关注。\n\n");
-            advice.append("建议：\n");
-            advice.append("• 创造温馨的家庭环境，让孩子感受到安全感\n");
-            advice.append("• 逐步引导孩子参与小规模的社交活动\n");
-            advice.append("• 教授孩子一些应对焦虑的简单技巧，如深呼吸\n");
-            advice.append("• 避免过度保护，适当鼓励孩子面对挑战\n");
-            advice.append("• 如情况持续，可考虑寻求专业心理咨询师的帮助");
-
+            description = "缓解社交焦虑的建议";
+            content.add("创造温馨的家庭环境，让孩子感受到安全感");
+            content.add("逐步引导孩子参与小规模的社交活动");
+            content.add("教授孩子一些应对焦虑的简单技巧，如深呼吸");
+            content.add("避免过度保护，适当鼓励孩子面对挑战");
+            content.add("如情况持续，可考虑寻求专业心理咨询师的帮助");
         } else {
-            advice.append("😟 您的孩子在社交焦虑方面需要重点关注和专业指导。\n\n");
-            advice.append("建议：\n");
-            advice.append("• 立即寻求专业儿童心理健康专家的评估和指导\n");
-            advice.append("• 与学校老师密切沟通，了解孩子在校表现\n");
-            advice.append("• 考虑专业的心理干预或治疗方案\n");
-            advice.append("• 给予孩子更多的耐心、理解和无条件的爱\n");
-            advice.append("• 避免批评或强迫孩子参与社交活动");
+            description = "专业干预和支持的建议";
+            content.add("立即寻求专业儿童心理健康专家的评估和指导");
+            content.add("与学校老师密切沟通，了解孩子在校表现");
+            content.add("考虑专业的心理干预或治疗方案");
+            content.add("给予孩子更多的耐心、理解和无条件的爱");
+            content.add("避免批评或强迫孩子参与社交活动");
+            content.add("建立支持性的家庭和学校环境");
         }
 
-        // 根据具体维度给出针对性建议
-        for (QuestionnaireResultDTO.ResultDetail detail : result.getDetails()) {
-            if ("高风险".equals(detail.getLevel())) {
-                advice.append("\n\n针对【").append(detail.getLabel()).append("】的特别建议：\n");
-                advice.append(getSpecificAdviceForDimension(detail.getLabel(), detail.getLevel()));
-            }
-        }
-
-        return advice.toString();
+        return QuestionnaireResultDTO.Advice.builder()
+                .description(description)
+                .content(content)
+                .build();
     }
 
     /**
-     * 获取特定维度的建议
+     * 获取维度的阈值范围
      */
-    private String getSpecificAdviceForDimension(String dimension, String level) {
-        switch (dimension) {
-            case "害怕否定评价":
-                return "• 多给孩子正面鼓励，减少批评和比较\n" +
-                       "• 教导孩子理解每个人都有优缺点，不必过分在意他人看法\n" +
-                       "• 通过角色扮演等方式帮助孩子练习应对他人评价";
-
-            case "社交回避及苦恼":
-                return "• 从孩子感兴趣的活动开始，逐步扩大社交圈\n" +
-                       "• 陪伴孩子参与社交活动，给予安全感\n" +
-                       "• 教授基本的社交技巧，如问候、分享等";
-
-            default:
-                return "• 针对此维度的困难，建议咨询专业人士获取个性化指导";
+    private int[] getDimensionRange(String dimension, String level, int[] thresholds) {
+        if ("低风险".equals(level)) {
+            return new int[]{0, thresholds[0]};
+        } else if ("中度风险".equals(level)) {
+            return new int[]{thresholds[0] + 1, thresholds[1]};
+        } else {
+            // 高风险，需要根据维度确定最大值
+            int maxScore = getDimensionMaxScore(dimension);
+            return new int[]{thresholds[1] + 1, maxScore};
         }
     }
+
+    /**
+     * 获取维度的最大分数
+     */
+    private int getDimensionMaxScore(String dimension) {
+        switch (dimension) {
+            case "害怕否定评价":
+                return 12;  // 6题 × 2分
+            case "社交回避及苦恼":
+                return 8;   // 4题 × 2分
+            default:
+                return 20;  // 默认最大值
+        }
+    }
+
 }

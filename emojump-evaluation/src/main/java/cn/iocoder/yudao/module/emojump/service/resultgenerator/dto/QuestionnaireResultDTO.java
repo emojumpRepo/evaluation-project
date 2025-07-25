@@ -60,7 +60,10 @@ public class QuestionnaireResultDTO {
         private String label;
         private Integer value;
         private String level;
+        private int[] range;
+        private String description;
         private String interpretation;
+        private Advice advice;
     }
 
     /**
@@ -74,6 +77,19 @@ public class QuestionnaireResultDTO {
         private String label;
         private Integer value;
         private String level;
+        private int[] range;
         private String interpretation;
+    }
+
+    /**
+     * 建议信息
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Advice {
+        private String description;
+        private List<String> content;
     }
 }
