@@ -25,6 +25,9 @@ public class AppBabyQuestionnaireResultRespVO {
     @Schema(description = "问卷结果项")
     @Data
     public static class QuestionnaireResultItem {
+
+        @Schema(description = "问卷结果编号", example = "1")
+        private Long id;
         
         @Schema(description = "问卷编号", example = "1")
         private Long questionnaireId;

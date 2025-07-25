@@ -6,6 +6,7 @@ import cn.iocoder.yudao.module.emojump.controller.admin.questionnaireresult.vo.Q
 import cn.iocoder.yudao.module.emojump.controller.admin.questionnaireresult.vo.QuestionnaireResultRespVO;
 import cn.iocoder.yudao.module.emojump.controller.admin.questionnaireresult.vo.QuestionnaireResultUpdateReqVO;
 import cn.iocoder.yudao.module.emojump.controller.app.questionnaireresult.vo.AppQuestionnaireResultListRespVO;
+import cn.iocoder.yudao.module.emojump.controller.app.questionnaireresult.vo.AppQuestionnaireResultVO;
 import cn.iocoder.yudao.module.emojump.dal.dataobject.questionnaireresult.EmoQuestionnaireResultDO;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
@@ -36,5 +37,7 @@ public interface QuestionnaireResultConvert {
 
     AppQuestionnaireResultListRespVO convertToListVO(EmoQuestionnaireResultDO bean);
     List<AppQuestionnaireResultListRespVO> convertToListVOList(List<EmoQuestionnaireResultDO> list);
+
+    AppQuestionnaireResultVO convertToAppVO(EmoQuestionnaireResultDO bean);
 
 }

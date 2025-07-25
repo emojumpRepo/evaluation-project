@@ -8,6 +8,7 @@ import cn.iocoder.yudao.module.emojump.controller.admin.questionnaireresult.vo.Q
 import cn.iocoder.yudao.module.emojump.dal.dataobject.questionnaireresult.EmoQuestionnaireResultDO;
 import cn.iocoder.yudao.module.emojump.controller.app.questionnaireresult.vo.AppBabyQuestionnaireResultRespVO;
 import cn.iocoder.yudao.module.emojump.controller.app.questionnaireresult.vo.AppQuestionnaireResultListRespVO;
+import cn.iocoder.yudao.module.emojump.controller.app.questionnaireresult.vo.AppQuestionnaireResultVO;
 
 import javax.validation.Valid;
 import java.time.LocalDateTime;
@@ -125,11 +126,19 @@ public interface QuestionnaireResultService {
     List<AppBabyQuestionnaireResultRespVO> getBabyQuestionnaireResults(Long babyId);
 
     /**
-     * 获取所有问卷测评结果（根据babyId和questionnaireId）
+     * 获取所有问卷测评结果（根据babyId、questionnaireId、assessmentId）
      * @param babyId 宝宝ID
      * @param questionnaireId 问卷ID
+     * @param assessmentId 测评ID
      * @return 结果列表
      */
-    List<AppQuestionnaireResultListRespVO> getAllResultsByBabyAndQuestionnaire(Long babyId, Long questionnaireId);
+    List<AppQuestionnaireResultListRespVO> getAllResultsByBabyAndQuestionnaire(Long babyId, Long questionnaireId, Long assessmentId);
+
+    /**
+     * 根据ID获取问卷结果
+     * @param id 问卷结果ID
+     * @return 问卷结果
+     */
+    AppQuestionnaireResultVO getQuestionnaireResultById(Long id);
 
 }

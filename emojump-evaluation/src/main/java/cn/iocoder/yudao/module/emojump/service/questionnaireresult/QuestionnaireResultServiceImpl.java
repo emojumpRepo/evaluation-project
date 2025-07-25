@@ -6,6 +6,7 @@ import cn.iocoder.yudao.module.emojump.controller.admin.questionnaireresult.vo.Q
 import cn.iocoder.yudao.module.emojump.controller.admin.questionnaireresult.vo.QuestionnaireResultCreateReqVO;
 import cn.iocoder.yudao.module.emojump.controller.admin.questionnaireresult.vo.QuestionnaireResultPageReqVO;
 import cn.iocoder.yudao.module.emojump.controller.admin.questionnaireresult.vo.QuestionnaireResultUpdateReqVO;
+import cn.iocoder.yudao.module.emojump.controller.app.questionnaireresult.vo.AppQuestionnaireResultVO;
 import cn.iocoder.yudao.module.emojump.convert.questionnaireresult.QuestionnaireResultConvert;
 import cn.iocoder.yudao.module.emojump.dal.dataobject.questionnaireresult.EmoQuestionnaireResultDO;
 import cn.iocoder.yudao.module.emojump.dal.mysql.questionnaireresult.EmoQuestionnaireResultMapper;
@@ -416,7 +417,7 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
 
     @Override
     public List<AppBabyQuestionnaireResultRespVO> getBabyQuestionnaireResults(Long babyId) {
-        // 根据 babyId 获取 assessmentId 列表并去重
+        // 根据 babyId 获取 assessmentId 列表并去重（查emo_assessment_result表）
         List<Long> assessmentIds = assessmentResultMapper.selectList(
                 new LambdaQueryWrapperX<AssessmentResultDO>()
                         .eq(AssessmentResultDO::getBabyId, babyId)
@@ -432,7 +433,7 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
 
         System.out.println("[getBabyQuestionnaireResults] 找到测评ID列表: " + assessmentIds);
 
-        // 获取测评标题
+        // 获取测评标题(查emo_assessment表)
         Map<Long, String> assessmentTitleMap = assessmentMapper.selectBatchIds(assessmentIds)
                 .stream()
                 .collect(Collectors.toMap(
@@ -440,7 +441,7 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
                         AssessmentDO::getTitle
                 ));
 
-        // 获取测评关联的问卷ID
+        // 获取测评关联的问卷ID(查emo_assessment_questionnaire表)
         Map<Long, List<Long>> assessmentQuestionnaireMap = new HashMap<>();
         Set<Long> allQuestionnaireIds = new HashSet<>();
         for (Long assessmentId : assessmentIds) {
@@ -453,7 +454,7 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
             allQuestionnaireIds.addAll(questionnaireIds);
         }
 
-        // 获取问卷标题
+        // 获取问卷标题(查emo_questionnaire表)
         Map<Long, String> questionnaireTitleMap = questionnaireMapper.selectBatchIds(new ArrayList<>(allQuestionnaireIds))
                 .stream()
                 .collect(Collectors.toMap(
@@ -461,19 +462,25 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
                         QuestionnaireDO::getTitle
                 ));
 
-        // 获取每个问卷的最新结果
-        Map<Long, EmoQuestionnaireResultDO> latestResultMap = new HashMap<>();
-        for (Long questionnaireId : allQuestionnaireIds) {
-            List<EmoQuestionnaireResultDO> results = emoQuestionnaireResultMapper.selectList(
-                    new LambdaQueryWrapperX<EmoQuestionnaireResultDO>()
+        // 获取每个(assessmentId, questionnaireId)的最新结果(查emo_questionnaire_result表)
+        Map<String, EmoQuestionnaireResultDO> latestResultMap = new HashMap<>();
+        for (Long assessmentId : assessmentIds) {
+            List<Long> questionnaireIds = assessmentQuestionnaireMap.get(assessmentId);
+            if (questionnaireIds != null) {
+                for (Long questionnaireId : questionnaireIds) {
+                    List<EmoQuestionnaireResultDO> results = emoQuestionnaireResultMapper.selectList(
+                        new LambdaQueryWrapperX<EmoQuestionnaireResultDO>()
                             .eq(EmoQuestionnaireResultDO::getBabyId, babyId)
+                            .eq(EmoQuestionnaireResultDO::getAssessmentId, assessmentId)
                             .eq(EmoQuestionnaireResultDO::getQuestionnaireId, questionnaireId)
                             .isNotNull(EmoQuestionnaireResultDO::getCompletedTime)
                             .orderByDesc(EmoQuestionnaireResultDO::getCompletedTime)
                             .last("LIMIT 1")
-            );
-            if (!results.isEmpty()) {
-                latestResultMap.put(questionnaireId, results.get(0));
+                    );
+                    if (!results.isEmpty()) {
+                        latestResultMap.put(assessmentId + "_" + questionnaireId, results.get(0));
+                    }
+                }
             }
         }
 
@@ -490,10 +497,11 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
             List<AppBabyQuestionnaireResultRespVO.QuestionnaireResultItem> questionnaireResults = new ArrayList<>();
             if (questionnaireIds != null) {
                 for (Long questionnaireId : questionnaireIds) {
-                    EmoQuestionnaireResultDO latestResult = latestResultMap.get(questionnaireId);
+                    EmoQuestionnaireResultDO latestResult = latestResultMap.get(assessmentId + "_" + questionnaireId);
                     if (latestResult != null) {
                         AppBabyQuestionnaireResultRespVO.QuestionnaireResultItem item =
                                 new AppBabyQuestionnaireResultRespVO.QuestionnaireResultItem();
+                        item.setId(latestResult.getId());
                         item.setQuestionnaireId(questionnaireId);
                         item.setQuestionnaireTitle(questionnaireTitleMap.get(questionnaireId));
                         item.setCompletedTime(latestResult.getCompletedTime());
@@ -504,18 +512,22 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
                 }
             }
             result.setQuestionnaireResults(questionnaireResults);
-            resultList.add(result);
+            
+            if (!questionnaireResults.isEmpty()) {
+                resultList.add(result);
+            }
         }
 
         return resultList;
     }
 
     @Override
-    public List<AppQuestionnaireResultListRespVO> getAllResultsByBabyAndQuestionnaire(Long babyId, Long questionnaireId) {
+    public List<AppQuestionnaireResultListRespVO> getAllResultsByBabyAndQuestionnaire(Long babyId, Long questionnaireId, Long assessmentId) {
         // 查询所有结果
         LambdaQueryWrapperX<EmoQuestionnaireResultDO> wrapper = new LambdaQueryWrapperX<EmoQuestionnaireResultDO>()
                 .eqIfPresent(EmoQuestionnaireResultDO::getBabyId, babyId)
                 .eqIfPresent(EmoQuestionnaireResultDO::getQuestionnaireId, questionnaireId)
+                .eqIfPresent(EmoQuestionnaireResultDO::getAssessmentId, assessmentId)
                 .orderByDesc(EmoQuestionnaireResultDO::getCompletedTime);
         List<EmoQuestionnaireResultDO> resultList = emoQuestionnaireResultMapper.selectList(wrapper);
         if (resultList.isEmpty()) {
@@ -533,6 +545,20 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
             vo.setTitle(titleMap.get(vo.getQuestionnaireId()));
         }
         return voList;
+    }
+
+    @Override
+    public AppQuestionnaireResultVO getQuestionnaireResultById(Long id) {
+        // 根据ID查询问卷结果
+        EmoQuestionnaireResultDO questionnaireResult = emoQuestionnaireResultMapper.selectById(id);
+        if (questionnaireResult == null) {
+            return null;
+        }
+        
+        // 转换为VO
+        AppQuestionnaireResultVO vo = QuestionnaireResultConvert.INSTANCE.convertToAppVO(questionnaireResult);
+        
+        return vo;
     }
 
 }
