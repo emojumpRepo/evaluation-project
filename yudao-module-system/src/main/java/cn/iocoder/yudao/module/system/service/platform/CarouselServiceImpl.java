@@ -16,7 +16,12 @@ import javax.validation.Valid;
 import java.util.Collection;
 import java.util.List;
 
+import cn.iocoder.yudao.module.system.enums.platform.CarouselTypeEnum;
+import org.springframework.util.StringUtils;
+
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.iocoder.yudao.module.system.enums.ErrorCodeConstants.CAROUSEL_LINK_URL_NOT_NULL;
+import static cn.iocoder.yudao.module.system.enums.ErrorCodeConstants.CAROUSEL_POPUP_CONTENT_NOT_NULL;
 import static cn.iocoder.yudao.module.system.enums.ErrorCodeConstants.CAROUSEL_NOT_EXISTS;
 
 /**
@@ -33,6 +38,8 @@ public class CarouselServiceImpl implements CarouselService {
 
     @Override
     public Long createCarousel(@Valid CarouselCreateReqVO createReqVO) {
+        // 校验
+        validateCarousel(createReqVO.getType(), createReqVO.getLinkUrl(), createReqVO.getPopupContent());
         // 插入
         CarouselDO carousel = CarouselConvert.INSTANCE.convert(createReqVO);
         carouselMapper.insert(carousel);
@@ -44,6 +51,8 @@ public class CarouselServiceImpl implements CarouselService {
     public void updateCarousel(@Valid CarouselUpdateReqVO updateReqVO) {
         // 校验存在
         validateCarouselExists(updateReqVO.getId());
+        // 校验
+        validateCarousel(updateReqVO.getType(), updateReqVO.getLinkUrl(), updateReqVO.getPopupContent());
         // 更新
         CarouselDO updateObj = CarouselConvert.INSTANCE.convert(updateReqVO);
         carouselMapper.updateById(updateObj);
@@ -60,6 +69,18 @@ public class CarouselServiceImpl implements CarouselService {
     private void validateCarouselExists(Long id) {
         if (carouselMapper.selectById(id) == null) {
             throw exception(CAROUSEL_NOT_EXISTS);
+        }
+    }
+
+    private void validateCarousel(Integer type, String linkUrl, String popupContent) {
+        if (type.equals(CarouselTypeEnum.REDIRECT.getType())) {
+            if (!StringUtils.hasText(linkUrl)) {
+                throw exception(CAROUSEL_LINK_URL_NOT_NULL);
+            }
+        } else if (type.equals(CarouselTypeEnum.POPUP.getType())) {
+            if (!StringUtils.hasText(popupContent)) {
+                throw exception(CAROUSEL_POPUP_CONTENT_NOT_NULL);
+            }
         }
     }
 

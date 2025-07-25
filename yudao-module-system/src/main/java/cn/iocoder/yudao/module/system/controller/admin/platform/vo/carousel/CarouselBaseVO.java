@@ -19,6 +19,10 @@ public class CarouselBaseVO {
     @Length(max = 100, message = "轮播图标题长度不能超过100个字符")
     private String title;
 
+    @Schema(description = "副标题", example = "活动详情")
+    @Length(max = 200, message = "副标题长度不能超过200个字符")
+    private String subtitle;
+
     @Schema(description = "图片URL", requiredMode = Schema.RequiredMode.REQUIRED, example = "https://www.iocoder.cn/xx.png")
     @NotBlank(message = "图片URL不能为空")
     @Length(max = 500, message = "图片URL长度不能超过500个字符")
@@ -35,6 +39,13 @@ public class CarouselBaseVO {
     @Schema(description = "状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     @NotNull(message = "状态不能为空")
     private Integer status;
+
+    @Schema(description = "类型", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
+    @NotNull(message = "类型不能为空")
+    private Integer type;
+
+    @Schema(description = "弹窗内容", example = "这是一个弹窗")
+    private String popupContent;
 
     @Schema(description = "备注", example = "春节活动轮播图")
     @Length(max = 500, message = "备注长度不能超过500个字符")
