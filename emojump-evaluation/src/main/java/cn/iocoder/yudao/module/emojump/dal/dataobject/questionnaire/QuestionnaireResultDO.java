@@ -46,6 +46,11 @@ public class QuestionnaireResultDO extends TenantBaseDO {
     private String resultData;
 
     /**
+     * 用户填写的答案数据（JSON格式）
+     */
+    private String answerData;
+
+    /**
      * 问卷得分
      */
     private BigDecimal score;
