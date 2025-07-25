@@ -4,10 +4,13 @@
 CREATE TABLE `system_carousel` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '轮播图ID',
   `title` varchar(100) NOT NULL COMMENT '轮播图标题',
+  `subtitle` varchar(200) DEFAULT NULL COMMENT '副标题',
   `image_url` varchar(500) NOT NULL COMMENT '图片URL',
   `link_url` varchar(500) DEFAULT NULL COMMENT '跳转链接',
   `sort` int NOT NULL DEFAULT '0' COMMENT '排序',
   `status` tinyint NOT NULL DEFAULT '1' COMMENT '状态（0=禁用 1=启用）',
+  `type` tinyint NOT NULL DEFAULT '1' COMMENT '类型（1=跳转链接 2=弹窗）',
+  `popup_content` text COMMENT '弹窗内容',
   `remark` varchar(500) DEFAULT NULL COMMENT '备注',
   `creator` varchar(64) DEFAULT '' COMMENT '创建者',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',

@@ -15,6 +15,8 @@ import cn.iocoder.yudao.module.emojump.dal.dataobject.questionnaire.Questionnair
 import cn.iocoder.yudao.module.emojump.dal.dataobject.questionnaire.QuestionnaireDO;
 import cn.iocoder.yudao.module.emojump.dal.mysql.questionnaire.QuestionnaireAccessMapper;
 import cn.iocoder.yudao.module.emojump.dal.mysql.questionnaire.QuestionnaireMapper;
+import cn.iocoder.yudao.module.emojump.dal.mysql.assessment.AssessmentQuestionnaireMapper;
+import cn.iocoder.yudao.module.emojump.dal.dataobject.assessment.AssessmentQuestionnaireDO;
 import cn.iocoder.yudao.module.emojump.enums.QuestionnaireStatusEnum;
 import cn.iocoder.yudao.module.emojump.framework.survey.client.SurveySystemClient;
 import cn.iocoder.yudao.module.emojump.framework.survey.util.SurveyDataConverter;
@@ -35,6 +37,10 @@ import org.springframework.util.StringUtils;
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils.getLoginUserId;
 import static cn.iocoder.yudao.module.emojump.enums.ErrorCodeConstants.*;
+import java.util.ArrayList;
+import java.util.List;
+import cn.iocoder.yudao.module.emojump.dal.mysql.questionnaire.QuestionnaireResultMapper;
+import cn.iocoder.yudao.module.emojump.dal.dataobject.questionnaire.QuestionnaireResultDO;
 
 /**
  * 问卷管理 Service 实现类
@@ -53,7 +59,13 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
     private QuestionnaireAccessMapper questionnaireAccessMapper;
 
     @Resource
+    private AssessmentQuestionnaireMapper assessmentQuestionnaireMapper;
+
+    @Resource
     private SurveySystemClient surveySystemClient;
+
+    @Resource
+    private QuestionnaireResultMapper questionnaireResultMapper;
 
     @Override
     public Long createQuestionnaire(@Valid QuestionnaireCreateReqVO createReqVO) {
@@ -179,8 +191,51 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
 
     @Override
     public PageResult<AppQuestionnaireRespVO> getPublishedAppQuestionnairePage(AppQuestionnairePageReqVO pageReqVO) {
-        PageResult<QuestionnaireDO> pageResult = questionnaireMapper.selectPublishedPage(pageReqVO);
-        return QuestionnaireConvert.INSTANCE.convertAppPage(pageResult);
+        System.out.println("[getPublishedAppQuestionnairePage] 入参: " + pageReqVO);
+        // 新增：如果传入 assessmentId，则按测评-问卷关联表查找
+        if (pageReqVO.getAssessmentId() != null) {
+            Long assessmentId = pageReqVO.getAssessmentId();
+            System.out.println("[getPublishedAppQuestionnairePage] assessmentId: " + assessmentId);
+            // 1. 查询关联表获取 questionnaireId 列表
+            List<AssessmentQuestionnaireDO> relations = assessmentQuestionnaireMapper.selectByAssessmentId(assessmentId);
+            if (relations == null || relations.isEmpty()) {
+                // 返回空分页
+                return new PageResult<>(new ArrayList<>(), 0L);
+            }
+            List<Long> questionnaireIds = new ArrayList<>();
+            for (AssessmentQuestionnaireDO relation : relations) {
+                questionnaireIds.add(relation.getQuestionnaireId());
+            }
+            System.out.println("[getPublishedAppQuestionnairePage] 关联问卷ID: " + questionnaireIds);
+            // 2. 分页查询问卷表（只查当前页）
+            PageResult<QuestionnaireDO> pageResult = questionnaireMapper.selectPage(pageReqVO, questionnaireIds);
+            List<QuestionnaireDO> questionnaires = pageResult.getList();
+            // 3. 查询问卷完成情况（只查当前页的问卷）
+            List<Long> pageQuestionnaireIds = new ArrayList<>();
+            for (QuestionnaireDO q : questionnaires) {
+                pageQuestionnaireIds.add(q.getId());
+            }
+            List<QuestionnaireResultDO> resultList = pageQuestionnaireIds.isEmpty() ? new ArrayList<>() : questionnaireResultMapper.selectList(
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<QuestionnaireResultDO>()
+                    .in(QuestionnaireResultDO::getQuestionnaireId, pageQuestionnaireIds)
+            );
+            // 4. 构建questionnaireId到completed的映射
+            java.util.Set<Long> completedSet = new java.util.HashSet<>();
+            for (QuestionnaireResultDO result : resultList) {
+                completedSet.add(result.getQuestionnaireId());
+            }
+            // 5. 转换为 AppQuestionnaireRespVO，并设置completed字段
+            List<AppQuestionnaireRespVO> voList = QuestionnaireConvert.INSTANCE.convertAppList(questionnaires);
+            for (AppQuestionnaireRespVO vo : voList) {
+                vo.setCompleted(completedSet.contains(vo.getId()));
+            }
+            // 6. 构造分页对象（分页返回）
+            return new PageResult<>(voList, pageResult.getTotal());
+        } else {
+            // 原有逻辑：分页查找所有已发布问卷
+            PageResult<QuestionnaireDO> pageResult = questionnaireMapper.selectPublishedPage(pageReqVO);
+            return QuestionnaireConvert.INSTANCE.convertAppPage(pageResult);
+        }
     }
 
     @Override

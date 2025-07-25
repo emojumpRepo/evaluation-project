@@ -28,4 +28,7 @@ public class AppQuestionnaireRespVO {
     @Schema(description = "是否热门", example = "true")
     private Boolean isPopular;
     
+    @Schema(description = "是否已完成", example = "false")
+    private Boolean completed;
+    
 } 

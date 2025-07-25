@@ -31,6 +31,10 @@ public class CarouselDO extends TenantBaseDO {
      * 轮播图标题
      */
     private String title;
+    /**
+     * 副标题
+     */
+    private String subtitle;
     
     /**
      * 图片URL
@@ -46,13 +50,25 @@ public class CarouselDO extends TenantBaseDO {
      * 排序
      */
     private Integer sort;
-    
+
     /**
      * 状态
      *
      * 枚举 {@link cn.iocoder.yudao.framework.common.enums.CommonStatusEnum}
      */
     private Integer status;
+
+    /**
+     * 类型
+     *
+     * 枚举 {@link cn.iocoder.yudao.module.system.enums.platform.CarouselTypeEnum}
+     */
+    private Integer type;
+
+    /**
+     * 弹窗内容
+     */
+    private String popupContent;
     
     /**
      * 备注
