@@ -8,6 +8,8 @@ import cn.iocoder.yudao.module.emojump.controller.app.questionnaire.vo.AppQuesti
 import cn.iocoder.yudao.module.emojump.dal.dataobject.questionnaire.QuestionnaireDO;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.List;
+
 /**
  * 问卷 Mapper
  *
@@ -39,11 +41,27 @@ public interface QuestionnaireMapper extends BaseMapperX<QuestionnaireDO> {
         return selectPage(reqVO, wrapper.orderByDesc(QuestionnaireDO::getId));
     }
 
+    default PageResult<QuestionnaireDO> selectPage(AppQuestionnairePageReqVO reqVO, List<Long> questionnaireIds) {
+        if (questionnaireIds == null || questionnaireIds.isEmpty()) {
+            return new PageResult<>(new java.util.ArrayList<>(), 0L);
+        }
+        LambdaQueryWrapperX<QuestionnaireDO> wrapper = new LambdaQueryWrapperX<QuestionnaireDO>()
+                .in(QuestionnaireDO::getId, questionnaireIds)
+                .eq(QuestionnaireDO::getStatus, 1) // 已发布状态
+                .eqIfPresent(QuestionnaireDO::getType, reqVO.getType());
+        if (reqVO.getKeyword() != null) {
+            wrapper.and(w -> w.like(QuestionnaireDO::getTitle, reqVO.getKeyword())
+                    .or()
+                    .like(QuestionnaireDO::getDescription, reqVO.getKeyword()));
+        }
+        return selectPage(reqVO, wrapper.orderByAsc(QuestionnaireDO::getId));
+    }
+
     default PageResult<QuestionnaireDO> selectPublishedPage(QuestionnairePageReqVO reqVO) {
         return selectPage(reqVO, new LambdaQueryWrapperX<QuestionnaireDO>()
                 .eq(QuestionnaireDO::getStatus, 1) // 已发布状态
                 .eqIfPresent(QuestionnaireDO::getType, reqVO.getType())
-                .orderByDesc(QuestionnaireDO::getId));
+                .orderByAsc(QuestionnaireDO::getId));
     }
 
     default PageResult<QuestionnaireDO> selectPublishedPage(AppQuestionnairePageReqVO reqVO) {

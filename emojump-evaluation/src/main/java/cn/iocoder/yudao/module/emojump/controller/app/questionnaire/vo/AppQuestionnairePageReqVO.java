@@ -16,4 +16,6 @@ public class AppQuestionnairePageReqVO extends PageParam {
     @Schema(description = "关键字", example = "儿童")
     private String keyword;
     
+    @Schema(description = "测评ID", example = "1")
+    private Long assessmentId;
 } 
