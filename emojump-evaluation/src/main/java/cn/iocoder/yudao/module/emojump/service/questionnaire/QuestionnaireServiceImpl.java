@@ -230,8 +230,22 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
                         .eq(babyId != null, QuestionnaireResultDO::getBabyId, babyId)
         );
 
-        // 5. 转换并返回
-        return QuestionnaireConvert.INSTANCE.convertAppList(questionnaires);
+        // 5. 根据questionnaireId去重
+        Set<Long> completedQuestionnaireIds = results.stream()
+                .map(QuestionnaireResultDO::getQuestionnaireId)
+                .collect(Collectors.toSet());
+
+        // 6. 先转换为VO对象
+        List<AppQuestionnaireRespVO> appQuestionnaireList = QuestionnaireConvert.INSTANCE.convertAppList(questionnaires);
+
+        // 7. 存在questionnaireId，则标记这个问卷为已完成（completed设为true,否则为false）
+        appQuestionnaireList.forEach(appQuestionnaire -> {
+            boolean completed = completedQuestionnaireIds.contains(appQuestionnaire.getId());
+            appQuestionnaire.setCompleted(completed);
+        });
+
+        // 8. 返回结果
+        return appQuestionnaireList;
     }
 
     @Override
