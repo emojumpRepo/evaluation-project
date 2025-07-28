@@ -268,9 +268,11 @@ public class AssessmentServiceImpl implements AssessmentService {
 
     @Override
     public PageResult<AppAssessmentRespVO> getPublishedAssessmentPage(AppAssessmentPageReqVO pageReqVO) {
+        System.out.println("传入的参数" + pageReqVO);
         PageResult<AssessmentDO> pageResult = assessmentMapper.selectPublishedPage(pageReqVO);
+        System.out.println("查询到的数据" + pageResult);
         PageResult<AppAssessmentRespVO> convertPage = AssessmentConvert.INSTANCE.convertAppPage(pageResult);
-        fillAssessmentParticipateStatus(convertPage.getList(), getLoginUserId());
+        System.out.println("转换后的数据" + convertPage);
         return convertPage;
     }
 
@@ -683,6 +685,7 @@ public class AssessmentServiceImpl implements AssessmentService {
                 for (AssessmentResultDO result : results) {
                     assessmentParticipatedMap.put(result.getAssessmentId(), true);
                 }
+                System.out.println("参与的测评结果列表：" + assessmentParticipatedMap);
                 // Map<测评ID, 参与时间>（取第一个参与的时间）
                 Map<Long, LocalDateTime> assessmentParticipateTimeMap = new HashMap<>();
                 for (AssessmentResultDO result : results) {

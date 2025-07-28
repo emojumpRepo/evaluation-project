@@ -31,9 +31,19 @@ public class QuestionnaireResultDO extends TenantBaseDO {
     private Long id;
 
     /**
+     * 评估ID
+     */
+    private Long assessmentId;
+
+    /**
      * 测评结果ID
      */
     private Long assessmentResultId;
+
+    /**
+     * 宝宝ID
+     */
+    private Long babyId;
 
     /**
      * 问卷ID
