@@ -6,6 +6,8 @@ import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.emojump.controller.admin.assessment.AssessmentPageReqVO;
 import cn.iocoder.yudao.module.emojump.controller.app.assessment.vo.AppAssessmentPageReqVO;
 import cn.iocoder.yudao.module.emojump.dal.dataobject.assessment.AssessmentDO;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
@@ -33,10 +35,19 @@ public interface AssessmentMapper extends BaseMapperX<AssessmentDO> {
     }
 
     default PageResult<AssessmentDO> selectPublishedPage(AppAssessmentPageReqVO reqVO) {
-        return selectPage(reqVO, new LambdaQueryWrapperX<AssessmentDO>()
+        // 创建分页对象
+        Page<AssessmentDO> page = new Page<>(reqVO.getPageNo(), reqVO.getPageSize());
+        
+        // 构建查询条件
+        LambdaQueryWrapperX<AssessmentDO> queryWrapper = new LambdaQueryWrapperX<AssessmentDO>()
                 .eq(AssessmentDO::getStatus, 1) // 已发布状态
                 .eqIfPresent(AssessmentDO::getType, reqVO.getType())
-                .orderByDesc(AssessmentDO::getId));
-    }
+                .orderByDesc(AssessmentDO::getId);
 
+        // 执行分页查询
+        IPage<AssessmentDO> resultPage = selectPage(page, queryWrapper);
+        
+        // 转换为PageResult对象
+        return new PageResult<>(resultPage.getRecords(), resultPage.getTotal());
+    }
 } 

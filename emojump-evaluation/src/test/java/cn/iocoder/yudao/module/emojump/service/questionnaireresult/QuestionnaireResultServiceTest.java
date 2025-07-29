@@ -18,6 +18,7 @@ import static cn.iocoder.yudao.framework.common.util.object.ObjectUtils.cloneIgn
 import static cn.iocoder.yudao.framework.test.core.util.AssertUtils.assertPojoEquals;
 import static cn.iocoder.yudao.framework.test.core.util.RandomUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
+import cn.iocoder.yudao.framework.common.pojo.PageResult;
 
 /**
  * {@link QuestionnaireResultServiceImpl} 的单元测试类
@@ -108,7 +109,7 @@ public class QuestionnaireResultServiceTest extends BaseDbUnitTest {
         reqVO.setCreateTime(new LocalDateTime[]{LocalDateTime.of(2022, 12, 1, 0, 0, 0), LocalDateTime.of(2023, 2, 1, 0, 0, 0)});
 
         // 调用
-        var pageResult = questionnaireResultService.getQuestionnaireResultPage(reqVO);
+        PageResult<EmoQuestionnaireResultDO> pageResult = questionnaireResultService.getQuestionnaireResultPage(reqVO);
         // 断言
         assertEquals(1, pageResult.getTotal());
         assertEquals(1, pageResult.getList().size());

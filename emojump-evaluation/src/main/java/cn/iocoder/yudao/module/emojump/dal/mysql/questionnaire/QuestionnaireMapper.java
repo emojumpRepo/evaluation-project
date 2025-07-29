@@ -95,4 +95,10 @@ public interface QuestionnaireMapper extends BaseMapperX<QuestionnaireDO> {
                 .orderByDesc(QuestionnaireDO::getId));
     }
 
+    default List<QuestionnaireDO> selectPublishedList() {
+        return selectList(new LambdaQueryWrapperX<QuestionnaireDO>()
+                .eq(QuestionnaireDO::getStatus, 1) // 已发布状态
+                .orderByDesc(QuestionnaireDO::getId));
+    }
+
 } 
