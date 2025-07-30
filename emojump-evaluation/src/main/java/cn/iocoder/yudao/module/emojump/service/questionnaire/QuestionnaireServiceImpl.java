@@ -44,6 +44,8 @@ import cn.iocoder.yudao.module.emojump.dal.dataobject.questionnaire.Questionnair
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.HashMap;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.beans.BeanUtils;
 import cn.iocoder.yudao.framework.common.util.collection.CollectionUtils;
@@ -131,6 +133,12 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
     public PageResult<QuestionnaireRespVO> getQuestionnairePage(QuestionnairePageReqVO pageReqVO) {
         PageResult<QuestionnaireDO> pageResult = questionnaireMapper.selectPage(pageReqVO);
         return QuestionnaireConvert.INSTANCE.convertPage(pageResult);
+    }
+
+    @Override
+    public List<QuestionnaireRespVO> getAllQuestionnaireList() {
+        List<QuestionnaireDO> questionnaireList = questionnaireMapper.selectList();
+        return QuestionnaireConvert.INSTANCE.convertList(questionnaireList);
     }
 
     @Override
@@ -230,21 +238,62 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
                         .eq(babyId != null, QuestionnaireResultDO::getBabyId, babyId)
         );
 
-        // 5. 根据questionnaireId去重
-        Set<Long> completedQuestionnaireIds = results.stream()
-                .map(QuestionnaireResultDO::getQuestionnaireId)
-                .collect(Collectors.toSet());
+        Set<Long> completedQuestionnaireIds;
 
-        // 6. 先转换为VO对象
+        // 5. 特殊处理assessmentId为10的情况
+        if (assessmentId != null && assessmentId == 10L) {
+            // 按assessmentResultId分组
+            Map<Long, List<QuestionnaireResultDO>> groupedByAssessmentResultId = results.stream()
+                    .filter(result -> result.getAssessmentResultId() != null)
+                    .collect(Collectors.groupingBy(QuestionnaireResultDO::getAssessmentResultId));
+
+            System.out.println("[getPublishedAppQuestionnairePage] assessmentId=10特殊处理，按assessmentResultId分组: " +
+                    groupedByAssessmentResultId.keySet());
+
+            // 过滤掉已完成一轮测评的数据（即关联问卷的assessmentResultId都相同的数据）
+            List<QuestionnaireResultDO> filteredResults = new ArrayList<>();
+            for (Map.Entry<Long, List<QuestionnaireResultDO>> entry : groupedByAssessmentResultId.entrySet()) {
+                List<QuestionnaireResultDO> groupResults = entry.getValue();
+                Set<Long> groupQuestionnaireIds = groupResults.stream()
+                        .map(QuestionnaireResultDO::getQuestionnaireId)
+                        .collect(Collectors.toSet());
+
+                // 如果这组数据包含的问卷ID数量等于总关联问卷数量，说明完成了一轮测评，需要过滤掉
+                if (groupQuestionnaireIds.size() < questionnaireIds.size()) {
+                    filteredResults.addAll(groupResults);
+                } else {
+                    System.out.println("[getPublishedAppQuestionnairePage] 过滤掉完整一轮的测评数据，assessmentResultId: " + entry.getKey());
+                }
+            }
+
+            if (filteredResults.isEmpty()) {
+                // 如果过滤后数据为空，标记所有问卷为未完成
+                completedQuestionnaireIds = new HashSet<>();
+                System.out.println("[getPublishedAppQuestionnairePage] 过滤后数据为空，所有问卷标记为未完成");
+            } else {
+                // 标记有assessmentResultId的问卷为已完成
+                completedQuestionnaireIds = filteredResults.stream()
+                        .map(QuestionnaireResultDO::getQuestionnaireId)
+                        .collect(Collectors.toSet());
+                System.out.println("[getPublishedAppQuestionnairePage] 标记为已完成的问卷ID: " + completedQuestionnaireIds);
+            }
+        } else {
+            // 6. 原有逻辑：根据questionnaireId去重
+            completedQuestionnaireIds = results.stream()
+                    .map(QuestionnaireResultDO::getQuestionnaireId)
+                    .collect(Collectors.toSet());
+        }
+
+        // 7. 先转换为VO对象
         List<AppQuestionnaireRespVO> appQuestionnaireList = QuestionnaireConvert.INSTANCE.convertAppList(questionnaires);
 
-        // 7. 存在questionnaireId，则标记这个问卷为已完成（completed设为true,否则为false）
+        // 8. 存在questionnaireId，则标记这个问卷为已完成（completed设为true,否则为false）
         appQuestionnaireList.forEach(appQuestionnaire -> {
             boolean completed = completedQuestionnaireIds.contains(appQuestionnaire.getId());
             appQuestionnaire.setCompleted(completed);
         });
 
-        // 8. 返回结果
+        // 9. 返回结果
         return appQuestionnaireList;
     }
 

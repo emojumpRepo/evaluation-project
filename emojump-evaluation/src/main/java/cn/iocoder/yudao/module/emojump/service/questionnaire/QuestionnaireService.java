@@ -57,6 +57,13 @@ public interface QuestionnaireService {
     PageResult<QuestionnaireRespVO> getQuestionnairePage(QuestionnairePageReqVO pageReqVO);
 
     /**
+     * 获得全部问卷列表
+     *
+     * @return 问卷列表
+     */
+    List<QuestionnaireRespVO> getAllQuestionnaireList();
+
+    /**
      * 发布问卷
      *
      * @param id 编号
