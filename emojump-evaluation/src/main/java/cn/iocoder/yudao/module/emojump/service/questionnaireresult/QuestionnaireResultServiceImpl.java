@@ -11,8 +11,8 @@ import cn.iocoder.yudao.module.emojump.convert.questionnaireresult.Questionnaire
 import cn.iocoder.yudao.module.emojump.dal.dataobject.questionnaireresult.EmoQuestionnaireResultDO;
 import cn.iocoder.yudao.module.emojump.dal.mysql.questionnaireresult.EmoQuestionnaireResultMapper;
 
-import cn.iocoder.yudao.module.emojump.service.resultgenerator.QuestionnaireResultGeneratorService;
-import cn.iocoder.yudao.module.emojump.service.resultgenerator.dto.QuestionnaireResultDTO;
+import cn.iocoder.yudao.module.emojump.service.resultgenerator.questionnaire.QuestionnaireResultGeneratorService;
+import cn.iocoder.yudao.module.emojump.service.resultgenerator.dto.questionnaire.QuestionnaireResultDTO;
 import cn.iocoder.yudao.module.emojump.util.AesDecryptUtil;
 import cn.iocoder.yudao.module.member.service.baby.MemberBabyService;
 import cn.iocoder.yudao.module.emojump.dal.mysql.assessment.AssessmentMapper;
@@ -384,9 +384,20 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
 
             log.info("[submitQuestionnaireAnswer] 问卷答案数据格式验证通过");
 
+            // 查找未完成的测评结果记录
+            AssessmentResultDO unfinishedAssessmentResult = assessmentResultMapper.selectOne(
+                new LambdaQueryWrapperX<AssessmentResultDO>()
+                    .eq(AssessmentResultDO::getAssessmentId, assessmentId)
+                    .eq(AssessmentResultDO::getBabyId, userId)
+                    .eq(AssessmentResultDO::getStatus, 0)
+                    .orderByDesc(AssessmentResultDO::getId)
+                    .last("LIMIT 1")
+            );
+            Long assessmentResultId = unfinishedAssessmentResult != null ? unfinishedAssessmentResult.getId() : null;
             // 创建问卷结果记录
             EmoQuestionnaireResultDO questionnaireResult = EmoQuestionnaireResultDO.builder()
                     .assessmentId(assessmentId)
+                    .assessmentResultId(assessmentResultId)
                     .babyId(userId) // 使用userId作为babyId
                     .questionnaireId(questionnaireId)
                     .answerData(processedAnswerData) // 存储处理后的答案数据

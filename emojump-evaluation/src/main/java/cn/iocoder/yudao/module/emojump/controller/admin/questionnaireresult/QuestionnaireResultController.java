@@ -15,8 +15,8 @@ import cn.iocoder.yudao.module.emojump.convert.questionnaireresult.Questionnaire
 import cn.iocoder.yudao.module.emojump.dal.dataobject.questionnaireresult.EmoQuestionnaireResultDO;
 import cn.iocoder.yudao.module.emojump.dal.mysql.questionnaireresult.EmoQuestionnaireResultMapper;
 import cn.iocoder.yudao.module.emojump.service.questionnaireresult.QuestionnaireResultService;
-import cn.iocoder.yudao.module.emojump.service.resultgenerator.QuestionnaireResultGeneratorService;
-import cn.iocoder.yudao.module.emojump.service.resultgenerator.dto.QuestionnaireResultDTO;
+import cn.iocoder.yudao.module.emojump.service.resultgenerator.questionnaire.QuestionnaireResultGeneratorService;
+import cn.iocoder.yudao.module.emojump.service.resultgenerator.dto.questionnaire.QuestionnaireResultDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

@@ -1,8 +1,8 @@
 package cn.iocoder.yudao.module.emojump.service.resultgenerator.impl;
 
-import cn.iocoder.yudao.module.emojump.service.resultgenerator.AbstractQuestionnaireResultGenerator;
-import cn.iocoder.yudao.module.emojump.service.resultgenerator.dto.QuestionnaireAnswerDTO;
-import cn.iocoder.yudao.module.emojump.service.resultgenerator.dto.QuestionnaireResultDTO;
+import cn.iocoder.yudao.module.emojump.service.resultgenerator.questionnaire.AbstractQuestionnaireResultGenerator;
+import cn.iocoder.yudao.module.emojump.service.resultgenerator.dto.questionnaire.QuestionnaireAnswerDTO;
+import cn.iocoder.yudao.module.emojump.service.resultgenerator.dto.questionnaire.QuestionnaireResultDTO;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;

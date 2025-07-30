@@ -1,16 +1,14 @@
-package cn.iocoder.yudao.module.emojump.controller.admin.assessmentresult;
+package cn.iocoder.yudao.module.emojump.controller.app.assessmentresult;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
-import cn.iocoder.yudao.framework.common.pojo.PageResult;
-import cn.iocoder.yudao.module.emojump.controller.admin.assessmentresult.vo.AssessmentResultPageReqVO;
-import cn.iocoder.yudao.module.emojump.controller.admin.assessmentresult.vo.AssessmentResultRespVO;
 import cn.iocoder.yudao.module.emojump.controller.admin.assessmentresult.vo.GenerateAssessmentResultReqVO;
 import cn.iocoder.yudao.module.emojump.controller.admin.assessmentresult.vo.GenerateAssessmentResultRespVO;
+import cn.iocoder.yudao.module.emojump.controller.app.assessmentresult.vo.HistoryAssessmentResultReqVO;
+import cn.iocoder.yudao.module.emojump.controller.app.assessmentresult.vo.HistoryAssessmentResultRespVO;
 import cn.iocoder.yudao.module.emojump.service.assessmentresult.AssessmentResultService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.security.access.prepost.PreAuthorize;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,32 +18,15 @@ import javax.validation.Valid;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 
-@Tag(name = "管理后台 - 测评结果")
+@Tag(name = "用户 App - 测评结果")
 @RestController
 @RequestMapping("/emojump/assessment-result")
 @Validated
-public class AssessmentResultController {
+@Slf4j
+public class AppAssessmentResultController {
 
     @Resource
     private AssessmentResultService assessmentResultService;
-
-    @GetMapping("/get")
-    @Operation(summary = "获得测评结果")
-    @Parameter(name = "id", description = "编号", required = true, example = "1024")
-    @Parameter(name = "babyId", description = "宝宝编号", required = true, example = "1024")
-    @PreAuthorize("@ss.hasPermission('emojump:assessment-result:query')")
-    public CommonResult<AssessmentResultRespVO> getAssessmentResult(@RequestParam("id") Long id, @RequestParam("babyId") Long babyId) {
-        AssessmentResultRespVO assessmentResult = assessmentResultService.getAssessmentResult(id, babyId);
-        return success(assessmentResult);
-    }
-
-    @GetMapping("/page")
-    @Operation(summary = "获得测评结果分页")
-    @PreAuthorize("@ss.hasPermission('emojump:assessment-result:query')")
-    public CommonResult<PageResult<AssessmentResultRespVO>> getAssessmentResultPage(@Valid AssessmentResultPageReqVO pageVO) {
-        PageResult<AssessmentResultRespVO> pageResult = assessmentResultService.getAssessmentResultPage(pageVO);
-        return success(pageResult);
-    }
 
     @PostMapping("/generate-result")
     @Operation(summary = "生成测评结果")
@@ -69,6 +50,24 @@ public class AssessmentResultController {
             respVO.setSuccess(false);
             respVO.setErrorMessage(e.getMessage());
             return success(respVO);
+        }
+    }
+
+    @PostMapping("/history-results")
+    @Operation(summary = "查询历史测评结果")
+    @PermitAll
+    public CommonResult<java.util.List<HistoryAssessmentResultRespVO>> getHistoryAssessmentResults(@Valid @RequestBody HistoryAssessmentResultReqVO reqVO) {
+        try {
+            // 调用服务查询历史测评结果
+            java.util.List<HistoryAssessmentResultRespVO> historyResults = assessmentResultService.getHistoryAssessmentResults(
+                reqVO.getAssessmentId(), reqVO.getBabyId());
+
+            return success(historyResults);
+
+        } catch (Exception e) {
+            log.error("[getHistoryAssessmentResults] 查询历史测评结果失败，测评ID: {}, 宝宝ID: {}, 错误: {}", 
+                reqVO.getAssessmentId(), reqVO.getBabyId(), e.getMessage(), e);
+            return success(java.util.Collections.emptyList());
         }
     }
 

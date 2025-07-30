@@ -1,4 +1,4 @@
-package cn.iocoder.yudao.module.emojump.service.resultgenerator.dto;
+package cn.iocoder.yudao.module.emojump.service.resultgenerator.dto.questionnaire;
 
 import lombok.Data;
 import lombok.Builder;
