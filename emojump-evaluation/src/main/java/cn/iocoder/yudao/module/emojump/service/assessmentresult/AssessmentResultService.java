@@ -3,6 +3,7 @@ package cn.iocoder.yudao.module.emojump.service.assessmentresult;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.emojump.controller.admin.assessmentresult.vo.AssessmentResultPageReqVO;
 import cn.iocoder.yudao.module.emojump.controller.admin.assessmentresult.vo.AssessmentResultRespVO;
+import cn.iocoder.yudao.module.emojump.controller.app.assessmentresult.vo.UserAssessmentRecordsRespVO;
 
 import javax.validation.Valid;
 import java.util.List;
@@ -48,5 +49,13 @@ public interface AssessmentResultService {
      * @return 历史测评结果列表
      */
     List<cn.iocoder.yudao.module.emojump.controller.app.assessmentresult.vo.HistoryAssessmentResultRespVO> getHistoryAssessmentResults(Long assessmentId, Long babyId);
+
+    /**
+     * 获取用户测评记录
+     *
+     * @param userId 用户ID
+     * @return 用户测评记录
+     */
+    UserAssessmentRecordsRespVO getUserAssessmentRecords(Long userId);
 
 }
