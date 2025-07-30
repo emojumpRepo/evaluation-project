@@ -16,6 +16,8 @@ import javax.validation.Valid;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 
+import java.util.List;
+
 @Tag(name = "管理后台 - 问卷管理")
 @RestController
 @RequestMapping("/emojump/questionnaire")
@@ -73,6 +75,21 @@ public class QuestionnaireController {
             System.err.println("错误信息: " + e.getMessage());
             e.printStackTrace();
             return CommonResult.error(500, "获取问卷列表失败: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/all")
+    @Operation(summary = "获得全部问卷列表")
+    @PreAuthorize("@ss.hasPermission('emojump:questionnaire:query')")
+    public CommonResult<List<QuestionnaireRespVO>> getAllQuestionnaireList() {
+        try {
+            return success(questionnaireService.getAllQuestionnaireList());
+        } catch (Exception e) {
+            // 记录详细的错误信息
+            System.err.println("获取全部问卷列表失败");
+            System.err.println("错误信息: " + e.getMessage());
+            e.printStackTrace();
+            return CommonResult.error(500, "获取全部问卷列表失败: " + e.getMessage());
         }
     }
 
@@ -138,4 +155,6 @@ public class QuestionnaireController {
                     result.getErrorMessage());
         }
     }
+
+    
 }

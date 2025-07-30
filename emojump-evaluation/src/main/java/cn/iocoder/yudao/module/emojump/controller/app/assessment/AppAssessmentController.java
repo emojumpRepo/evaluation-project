@@ -52,6 +52,7 @@ public class AppAssessmentController {
 
     @GetMapping("/published")
     @Operation(summary = "获得已发布测评列表")
+    @PermitAll
     public CommonResult<PageResult<AppAssessmentRespVO>> getPublishedAssessmentList(@Valid AppAssessmentPageReqVO pageReqVO) {
         return success(assessmentService.getPublishedAssessmentPage(pageReqVO));
     }
