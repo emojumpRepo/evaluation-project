@@ -33,13 +33,18 @@ public class QuestionnaireResultGeneratorService {
     public void init() {
         if (generators != null) {
             for (QuestionnaireResultGenerator generator : generators) {
-                Long questionnaireId = generator.getSupportedQuestionnaireId();
-                generatorMap.put(questionnaireId, generator);
-                log.info("[QuestionnaireResultGeneratorService] 注册问卷结果生成器: {} -> {}", 
-                        questionnaireId, generator.getQuestionnaireName());
+                List<Long> questionnaireIds = generator.getSupportedQuestionnaireIds();
+                if (questionnaireIds != null) {
+                    for (Long questionnaireId : questionnaireIds) {
+                        generatorMap.put(questionnaireId, generator);
+                        log.info("[QuestionnaireResultGeneratorService] 注册问卷结果生成器: {} -> {}", 
+                                questionnaireId, generator.getQuestionnaireName());
+                    }
+                }
             }
         }
-        log.info("[QuestionnaireResultGeneratorService] 初始化完成，共注册 {} 个结果生成器", generatorMap.size());
+        log.info("[QuestionnaireResultGeneratorService] 初始化完成，共注册 {} 个结果生成器，支持 {} 个问卷", 
+                generators != null ? generators.size() : 0, generatorMap.size());
     }
 
     /**

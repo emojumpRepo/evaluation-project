@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +51,11 @@ public class ChildDepDisorderQuestionnaireGenerator extends AbstractQuestionnair
 
     // 评分标准：>15分表示有抑郁的可能
     private static final int DEPRESSION_THRESHOLD = 15;
+
+    @Override
+    public List<Long> getSupportedQuestionnaireIds() {
+        return Arrays.asList(QUESTIONNAIRE_ID);
+    }
 
     @Override
     public Long getSupportedQuestionnaireId() {

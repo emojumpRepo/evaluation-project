@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +21,7 @@ import java.util.Map;
 @Component
 public class ChildAdaptiveAbilityQuestionnaireGenerator extends AbstractQuestionnaireResultGenerator {
 
-    private static final Long QUESTIONNAIRE_ID = 18L;
+    private static final Long QUESTIONNAIRE_ID = 22L;
     private static final String QUESTIONNAIRE_NAME = "儿童适应能力测评量表";
 
     // 评分规则配置
@@ -37,6 +38,11 @@ public class ChildAdaptiveAbilityQuestionnaireGenerator extends AbstractQuestion
         DIMENSION_QUESTIONS.put("社交沟通能力", new int[]{7, 8, 9, 10, 11, 12});
         DIMENSION_QUESTIONS.put("学习适应能力", new int[]{13, 14, 15, 16, 17, 18});
         DIMENSION_QUESTIONS.put("情绪调节能力", new int[]{19, 20, 21, 22, 23, 24});
+    }
+
+    @Override
+    public List<Long> getSupportedQuestionnaireIds() {
+        return Arrays.asList(QUESTIONNAIRE_ID);
     }
 
     @Override

@@ -3,6 +3,8 @@ package cn.iocoder.yudao.module.emojump.service.resultgenerator;
 import cn.iocoder.yudao.module.emojump.service.resultgenerator.dto.QuestionnaireAnswerDTO;
 import cn.iocoder.yudao.module.emojump.service.resultgenerator.dto.QuestionnaireResultDTO;
 
+import java.util.List;
+
 /**
  * 问卷结果生成器接口
  * 
@@ -11,11 +13,21 @@ import cn.iocoder.yudao.module.emojump.service.resultgenerator.dto.Questionnaire
 public interface QuestionnaireResultGenerator {
 
     /**
-     * 获取支持的问卷ID
+     * 获取支持的问卷ID列表
+     *
+     * @return 问卷ID列表
+     */
+    List<Long> getSupportedQuestionnaireIds();
+
+    /**
+     * 获取支持的问卷ID（兼容旧版本，返回第一个）
      *
      * @return 问卷ID
      */
-    Long getSupportedQuestionnaireId();
+    default Long getSupportedQuestionnaireId() {
+        List<Long> ids = getSupportedQuestionnaireIds();
+        return ids != null && !ids.isEmpty() ? ids.get(0) : null;
+    }
 
     /**
      * 获取问卷名称（用于日志和调试）

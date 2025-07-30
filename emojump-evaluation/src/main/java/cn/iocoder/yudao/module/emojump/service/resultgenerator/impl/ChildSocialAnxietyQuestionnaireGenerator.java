@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +45,11 @@ public class ChildSocialAnxietyQuestionnaireGenerator extends AbstractQuestionna
         // 格式：{低风险上限, 中度风险上限} - 超过中度风险上限为高风险
         DIMENSION_THRESHOLDS.put("害怕否定评价", new int[]{3, 8});   // 6题×0-2分 = 0-12分
         DIMENSION_THRESHOLDS.put("社交回避及苦恼", new int[]{2, 5});  // 4题×0-2分 = 0-8分
+    }
+
+    @Override
+    public List<Long> getSupportedQuestionnaireIds() {
+        return Arrays.asList(QUESTIONNAIRE_ID);
     }
 
     @Override

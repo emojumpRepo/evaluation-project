@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +43,11 @@ public class SimpleQuestionnaireGenerator extends AbstractQuestionnaireResultGen
         DIMENSION_THRESHOLDS.put("认知能力", new int[]{6, 12});   // 假设3题×1-5分，低风险≤6，中度风险7-12，高风险>12
         DIMENSION_THRESHOLDS.put("情感发展", new int[]{8, 15});   // 假设4题×1-5分，低风险≤8，中度风险9-15，高风险>15
         DIMENSION_THRESHOLDS.put("行为表现", new int[]{7, 14});   // 假设3题×1-5分，低风险≤7，中度风险8-14，高风险>14
+    }
+
+    @Override
+    public List<Long> getSupportedQuestionnaireIds() {
+        return Arrays.asList(QUESTIONNAIRE_ID);
     }
 
     @Override
