@@ -16,6 +16,8 @@ import cn.iocoder.yudao.module.emojump.dal.mysql.questionnaire.QuestionnaireAcce
 import cn.iocoder.yudao.module.emojump.dal.mysql.questionnaire.QuestionnaireMapper;
 import cn.iocoder.yudao.module.emojump.dal.mysql.assessment.AssessmentQuestionnaireMapper;
 import cn.iocoder.yudao.module.emojump.dal.dataobject.assessment.AssessmentQuestionnaireDO;
+import cn.iocoder.yudao.module.emojump.dal.mysql.assessment.AssessmentResultMapper;
+import cn.iocoder.yudao.module.emojump.dal.dataobject.assessment.AssessmentResultDO;
 import cn.iocoder.yudao.module.emojump.enums.QuestionnaireStatusEnum;
 import cn.iocoder.yudao.module.emojump.framework.survey.client.SurveySystemClient;
 import cn.iocoder.yudao.module.emojump.framework.survey.util.SurveyDataConverter;
@@ -74,6 +76,9 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
 
     @Resource
     private QuestionnaireResultMapper questionnaireResultMapper;
+
+    @Resource
+    private AssessmentResultMapper assessmentResultMapper;
 
     @Override
     public Long createQuestionnaire(@Valid QuestionnaireCreateReqVO createReqVO) {
@@ -267,9 +272,30 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
             }
 
             if (filteredResults.isEmpty()) {
-                // 如果过滤后数据为空，标记所有问卷为未完成
-                completedQuestionnaireIds = new HashSet<>();
-                System.out.println("[getPublishedAppQuestionnairePage] 过滤后数据为空，所有问卷标记为未完成");
+                // 如果过滤后数据为空，需要进一步检查assessmentResultId的状态
+                boolean hasIncompleteAssessment = false;
+                
+                // 检查原始分组数据中的assessmentResultId状态
+                for (Long assessmentResultId : groupedByAssessmentResultId.keySet()) {
+                    AssessmentResultDO assessmentResult = assessmentResultMapper.selectById(assessmentResultId);
+                    if (assessmentResult == null || assessmentResult.getStatus() == null || assessmentResult.getStatus() == 0) {
+                        hasIncompleteAssessment = true;
+                        System.out.println("[getPublishedAppQuestionnairePage] assessmentResultId: " + assessmentResultId + " 状态为进行中(0)或不存在，保持原有完成状态");
+                        break; // 找到一个status为0的就足够了
+                    }
+                }
+                
+                if (hasIncompleteAssessment) {
+                    // 如果存在任一assessmentResultId状态为0，保持原有的完成状态逻辑
+                    completedQuestionnaireIds = results.stream()
+                            .map(QuestionnaireResultDO::getQuestionnaireId)
+                            .collect(Collectors.toSet());
+                    System.out.println("[getPublishedAppQuestionnairePage] 过滤后数据为空但存在进行中的测评结果，保持原有完成状态");
+                } else {
+                    // 所有assessmentResultId状态都为1，标记所有问卷为未完成
+                    completedQuestionnaireIds = new HashSet<>();
+                    System.out.println("[getPublishedAppQuestionnairePage] 过滤后数据为空且所有测评结果都已完成，标记所有问卷为未完成");
+                }
             } else {
                 // 标记有assessmentResultId的问卷为已完成
                 completedQuestionnaireIds = filteredResults.stream()
