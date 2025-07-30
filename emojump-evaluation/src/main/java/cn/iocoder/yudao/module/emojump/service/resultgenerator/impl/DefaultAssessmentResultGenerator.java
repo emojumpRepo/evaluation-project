@@ -10,7 +10,6 @@ import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.Period;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -23,7 +22,7 @@ import java.util.List;
 @Component
 public class DefaultAssessmentResultGenerator extends AbstractAssessmentResultGenerator {
 
-    private static final List<Long> SUPPORTED_ASSESSMENT_IDS = Arrays.asList(1L, 2L, 3L, 4L, 5L);
+    private static final List<Long> SUPPORTED_ASSESSMENT_IDS = Arrays.asList(10L);
     private static final String ASSESSMENT_NAME = "儿童能力测评结果生成器";
 
     @Resource
@@ -91,7 +90,7 @@ public class DefaultAssessmentResultGenerator extends AbstractAssessmentResultGe
 
     /**
      * 计算实际月龄
-     * 首先计算出几岁几月零几日，再把岁和日换算为月，以月龄为单位。月龄保留一位小数。
+     * 按照calculateMonthAge函数的逻辑计算月龄
      */
     private double calculateActualAge(Long babyId) {
         if (babyId == null) {
@@ -106,19 +105,17 @@ public class DefaultAssessmentResultGenerator extends AbstractAssessmentResultGe
         LocalDate birthDate = baby.getBirthday();
         LocalDate currentDate = LocalDate.now();
         
-        Period period = Period.between(birthDate, currentDate);
+        // 计算年份差和月份差
+        int monthAge = (currentDate.getYear() - birthDate.getYear()) * 12;
+        monthAge += currentDate.getMonthValue() - birthDate.getMonthValue();
         
-        // 按照规则计算：几岁几月零几日
-        int years = period.getYears();
-        int months = period.getMonths();
-        int days = period.getDays();
+        // 如果当前日期的天数小于出生日期的天数，则月龄减1
+        if (currentDate.getDayOfMonth() < birthDate.getDayOfMonth()) {
+            monthAge--;
+        }
         
-        // 把岁和日换算为月，以月龄为单位
-        // 1岁 = 12个月，1日 = 1/30个月（近似）
-        double totalMonths = years * 12 + months + (days / 30.0);
-        
-        // 月龄保留一位小数
-        return Math.round(totalMonths * 10.0) / 10.0;
+        // 确保月龄不小于0
+        return Math.max(0, monthAge);
     }
 
     /**
