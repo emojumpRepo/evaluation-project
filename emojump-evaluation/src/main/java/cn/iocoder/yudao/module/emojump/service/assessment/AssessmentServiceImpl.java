@@ -300,13 +300,15 @@ public class AssessmentServiceImpl implements AssessmentService {
             throw exception(ASSESSMENT_FULL);
         }
 
-        // 检查宝宝是否已参与测评
-        AssessmentResultDO existingResult = assessmentResultMapper.selectOne(
+        // 检查宝宝是否存在状态为0（进行中）的测评记录
+        List<AssessmentResultDO> existingResults = assessmentResultMapper.selectList(
             AssessmentResultDO::getAssessmentId, assessmentId,
             AssessmentResultDO::getBabyId, babyId
         );
-        if (existingResult != null) {
-            throw exception(ASSESSMENT_ALREADY_PARTICIPATED);
+        for (AssessmentResultDO result : existingResults) {
+            if (result.getStatus() != null && result.getStatus() == 0) {
+                throw exception(ASSESSMENT_ALREADY_PARTICIPATED);
+            }
         }
 
         // 创建测评结果记录
