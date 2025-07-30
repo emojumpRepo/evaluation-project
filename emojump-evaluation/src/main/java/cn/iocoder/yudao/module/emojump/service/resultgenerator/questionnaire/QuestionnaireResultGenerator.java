@@ -1,7 +1,7 @@
-package cn.iocoder.yudao.module.emojump.service.resultgenerator;
+package cn.iocoder.yudao.module.emojump.service.resultgenerator.questionnaire;
 
-import cn.iocoder.yudao.module.emojump.service.resultgenerator.dto.QuestionnaireAnswerDTO;
-import cn.iocoder.yudao.module.emojump.service.resultgenerator.dto.QuestionnaireResultDTO;
+import cn.iocoder.yudao.module.emojump.service.resultgenerator.dto.questionnaire.QuestionnaireAnswerDTO;
+import cn.iocoder.yudao.module.emojump.service.resultgenerator.dto.questionnaire.QuestionnaireResultDTO;
 
 import java.util.List;
 
