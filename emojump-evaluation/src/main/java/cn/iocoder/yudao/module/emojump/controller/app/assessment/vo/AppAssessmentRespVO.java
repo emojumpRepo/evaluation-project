@@ -40,6 +40,9 @@ public class AppAssessmentRespVO {
     @Schema(description = "是否需要预约", example = "true")
     private Boolean needAppointment;
 
+    @Schema(description = "是否可以重复测评", example = "true")
+    private Boolean isRepeatable;
+
     @Schema(description = "最大参与人数", example = "100")
     private Integer maxParticipants;
 

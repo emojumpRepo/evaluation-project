@@ -16,6 +16,8 @@ import javax.validation.Valid;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 
+import java.util.List;
+
 @Tag(name = "用户 App - 问卷管理")
 @RestController
 @RequestMapping("/emojump/questionnaire")
@@ -38,8 +40,8 @@ public class AppQuestionnaireController {
 
     @GetMapping("/published")
     @Operation(summary = "获得已发布问卷列表")
-    public CommonResult<PageResult<AppQuestionnaireRespVO>> getPublishedQuestionnaireList(@Valid AppQuestionnairePageReqVO pageReqVO) {
-        return success(questionnaireService.getPublishedAppQuestionnairePage(pageReqVO));
+    public CommonResult<List<AppQuestionnaireRespVO>> getPublishedQuestionnaireList(@RequestParam("assessmentId") Long assessmentId, @RequestParam("babyId") Long babyId) {
+        return success(questionnaireService.getPublishedAppQuestionnairePage(assessmentId, babyId));
     }
 
     @GetMapping("/access")

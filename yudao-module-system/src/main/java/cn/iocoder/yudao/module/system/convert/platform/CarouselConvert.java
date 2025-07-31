@@ -7,6 +7,7 @@ import cn.iocoder.yudao.module.system.controller.admin.platform.vo.carousel.Caro
 import cn.iocoder.yudao.module.system.controller.app.platform.vo.AppCarouselRespVO;
 import cn.iocoder.yudao.module.system.dal.dataobject.platform.CarouselDO;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 
 import java.util.List;
@@ -23,6 +24,9 @@ public interface CarouselConvert {
 
     CarouselDO convert(CarouselCreateReqVO bean);
 
+    @Mapping(source = "subtitle", target = "subtitle")
+    @Mapping(source = "type", target = "type")
+    @Mapping(source = "popupContent", target = "popupContent")
     CarouselDO convert(CarouselUpdateReqVO bean);
 
     CarouselRespVO convert(CarouselDO bean);

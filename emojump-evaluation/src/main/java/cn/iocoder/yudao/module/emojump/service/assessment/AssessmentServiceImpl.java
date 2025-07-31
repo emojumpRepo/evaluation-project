@@ -268,9 +268,11 @@ public class AssessmentServiceImpl implements AssessmentService {
 
     @Override
     public PageResult<AppAssessmentRespVO> getPublishedAssessmentPage(AppAssessmentPageReqVO pageReqVO) {
+        System.out.println("传入的参数" + pageReqVO);
         PageResult<AssessmentDO> pageResult = assessmentMapper.selectPublishedPage(pageReqVO);
+        System.out.println("查询到的数据" + pageResult);
         PageResult<AppAssessmentRespVO> convertPage = AssessmentConvert.INSTANCE.convertAppPage(pageResult);
-        fillAssessmentParticipateStatus(convertPage.getList(), getLoginUserId());
+        System.out.println("转换后的数据" + convertPage);
         return convertPage;
     }
 
@@ -298,13 +300,15 @@ public class AssessmentServiceImpl implements AssessmentService {
             throw exception(ASSESSMENT_FULL);
         }
 
-        // 检查宝宝是否已参与测评
-        AssessmentResultDO existingResult = assessmentResultMapper.selectOne(
+        // 检查宝宝是否存在状态为0（进行中）的测评记录
+        List<AssessmentResultDO> existingResults = assessmentResultMapper.selectList(
             AssessmentResultDO::getAssessmentId, assessmentId,
             AssessmentResultDO::getBabyId, babyId
         );
-        if (existingResult != null) {
-            throw exception(ASSESSMENT_ALREADY_PARTICIPATED);
+        for (AssessmentResultDO result : existingResults) {
+            if (result.getStatus() != null && result.getStatus() == 0) {
+                throw exception(ASSESSMENT_ALREADY_PARTICIPATED);
+            }
         }
 
         // 创建测评结果记录
@@ -683,6 +687,7 @@ public class AssessmentServiceImpl implements AssessmentService {
                 for (AssessmentResultDO result : results) {
                     assessmentParticipatedMap.put(result.getAssessmentId(), true);
                 }
+                System.out.println("参与的测评结果列表：" + assessmentParticipatedMap);
                 // Map<测评ID, 参与时间>（取第一个参与的时间）
                 Map<Long, LocalDateTime> assessmentParticipateTimeMap = new HashMap<>();
                 for (AssessmentResultDO result : results) {

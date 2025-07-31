@@ -169,7 +169,9 @@ public interface ErrorCodeConstants {
     ErrorCode NOTIFY_SEND_TEMPLATE_PARAM_MISS = new ErrorCode(1_002_028_000, "模板参数({})缺失");
 
     // ========== 轮播图 1-002-029-000 ==========
-    ErrorCode CAROUSEL_NOT_EXISTS = new ErrorCode(1_002_029_000, "轮播图不存在");
+    ErrorCode CAROUSEL_NOT_EXISTS = new ErrorCode(1_001_006_000, "轮播图不存在");
+    ErrorCode CAROUSEL_LINK_URL_NOT_NULL = new ErrorCode(1_001_006_001, "轮播图跳转链接不能为空");
+    ErrorCode CAROUSEL_POPUP_CONTENT_NOT_NULL = new ErrorCode(1_001_006_002, "轮播图弹窗内容不能为空");
 
     // ========== 政策配置 1-002-030-000 ==========
     ErrorCode POLICY_NOT_EXISTS = new ErrorCode(1_002_030_000, "政策配置不存在");

@@ -9,12 +9,15 @@ import cn.iocoder.yudao.module.emojump.controller.admin.questionnaire.Questionna
 import cn.iocoder.yudao.module.emojump.controller.app.questionnaire.vo.AppQuestionnaireRespVO;
 import cn.iocoder.yudao.module.emojump.controller.app.questionnaire.vo.AppQuestionnaireAccessRespVO;
 import cn.iocoder.yudao.module.emojump.controller.app.questionnaire.vo.AppQuestionnairePageReqVO;
-import cn.iocoder.yudao.module.emojump.controller.app.questionnaire.vo.AppQuestionnaireRespVO;
 import cn.iocoder.yudao.module.emojump.convert.questionnaire.QuestionnaireConvert;
 import cn.iocoder.yudao.module.emojump.dal.dataobject.questionnaire.QuestionnaireAccessDO;
 import cn.iocoder.yudao.module.emojump.dal.dataobject.questionnaire.QuestionnaireDO;
 import cn.iocoder.yudao.module.emojump.dal.mysql.questionnaire.QuestionnaireAccessMapper;
 import cn.iocoder.yudao.module.emojump.dal.mysql.questionnaire.QuestionnaireMapper;
+import cn.iocoder.yudao.module.emojump.dal.mysql.assessment.AssessmentQuestionnaireMapper;
+import cn.iocoder.yudao.module.emojump.dal.dataobject.assessment.AssessmentQuestionnaireDO;
+import cn.iocoder.yudao.module.emojump.dal.mysql.assessment.AssessmentResultMapper;
+import cn.iocoder.yudao.module.emojump.dal.dataobject.assessment.AssessmentResultDO;
 import cn.iocoder.yudao.module.emojump.enums.QuestionnaireStatusEnum;
 import cn.iocoder.yudao.module.emojump.framework.survey.client.SurveySystemClient;
 import cn.iocoder.yudao.module.emojump.framework.survey.util.SurveyDataConverter;
@@ -35,6 +38,19 @@ import org.springframework.util.StringUtils;
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils.getLoginUserId;
 import static cn.iocoder.yudao.module.emojump.enums.ErrorCodeConstants.*;
+import java.util.ArrayList;
+import java.util.List;
+import cn.iocoder.yudao.module.emojump.dal.mysql.questionnaire.QuestionnaireResultMapper;
+import cn.iocoder.yudao.module.emojump.dal.dataobject.questionnaire.QuestionnaireResultDO;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.HashMap;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import org.springframework.beans.BeanUtils;
+import cn.iocoder.yudao.framework.common.util.collection.CollectionUtils;
 
 /**
  * 问卷管理 Service 实现类
@@ -53,7 +69,16 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
     private QuestionnaireAccessMapper questionnaireAccessMapper;
 
     @Resource
+    private AssessmentQuestionnaireMapper assessmentQuestionnaireMapper;
+
+    @Resource
     private SurveySystemClient surveySystemClient;
+
+    @Resource
+    private QuestionnaireResultMapper questionnaireResultMapper;
+
+    @Resource
+    private AssessmentResultMapper assessmentResultMapper;
 
     @Override
     public Long createQuestionnaire(@Valid QuestionnaireCreateReqVO createReqVO) {
@@ -113,6 +138,12 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
     public PageResult<QuestionnaireRespVO> getQuestionnairePage(QuestionnairePageReqVO pageReqVO) {
         PageResult<QuestionnaireDO> pageResult = questionnaireMapper.selectPage(pageReqVO);
         return QuestionnaireConvert.INSTANCE.convertPage(pageResult);
+    }
+
+    @Override
+    public List<QuestionnaireRespVO> getAllQuestionnaireList() {
+        List<QuestionnaireDO> questionnaireList = questionnaireMapper.selectList();
+        return QuestionnaireConvert.INSTANCE.convertList(questionnaireList);
     }
 
     @Override
@@ -178,9 +209,118 @@ public class QuestionnaireServiceImpl implements QuestionnaireService {
     }
 
     @Override
-    public PageResult<AppQuestionnaireRespVO> getPublishedAppQuestionnairePage(AppQuestionnairePageReqVO pageReqVO) {
-        PageResult<QuestionnaireDO> pageResult = questionnaireMapper.selectPublishedPage(pageReqVO);
-        return QuestionnaireConvert.INSTANCE.convertAppPage(pageResult);
+    public List<AppQuestionnaireRespVO> getPublishedAppQuestionnairePage(Long assessmentId, Long babyId) {
+        System.out.println("[getPublishedAppQuestionnairePage] 入参: assessmentId=" + assessmentId + ", babyId=" + babyId);
+        // 校验参数
+        if (assessmentId == null && babyId == null) {
+            throw exception(QUESTIONNAIRE_NOT_EXISTS);
+        }
+
+        // 1. 查询关联表获取问卷列表
+        List<AssessmentQuestionnaireDO> relations = assessmentQuestionnaireMapper.selectByAssessmentId(assessmentId);
+        if (relations == null || relations.isEmpty()) {
+            // 返回空结果
+            return new ArrayList<>();
+        }
+
+        // 2. 获取问卷ID列表
+        List<Long> questionnaireIds = relations.stream()
+                .map(AssessmentQuestionnaireDO::getQuestionnaireId)
+                .collect(Collectors.toList());
+        System.out.println("[getPublishedAppQuestionnairePage] 关联问卷ID: " + questionnaireIds);
+
+        // 3. 查询问卷列表
+        List<QuestionnaireDO> questionnaires = questionnaireMapper.selectBatchIds(questionnaireIds);
+        if (questionnaires == null || questionnaires.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 4. 查询问卷结果
+        List<QuestionnaireResultDO> results = questionnaireResultMapper.selectList(
+                new LambdaQueryWrapper<QuestionnaireResultDO>()
+                        .in(QuestionnaireResultDO::getQuestionnaireId, questionnaireIds)
+                        .eq(assessmentId != null, QuestionnaireResultDO::getAssessmentId, assessmentId)
+                        .eq(babyId != null, QuestionnaireResultDO::getBabyId, babyId)
+        );
+
+        Set<Long> completedQuestionnaireIds;
+
+        // 5. 特殊处理assessmentId为10的情况
+        if (assessmentId != null && assessmentId == 10L) {
+            // 按assessmentResultId分组
+            Map<Long, List<QuestionnaireResultDO>> groupedByAssessmentResultId = results.stream()
+                    .filter(result -> result.getAssessmentResultId() != null)
+                    .collect(Collectors.groupingBy(QuestionnaireResultDO::getAssessmentResultId));
+
+            System.out.println("[getPublishedAppQuestionnairePage] assessmentId=10特殊处理，按assessmentResultId分组: " +
+                    groupedByAssessmentResultId.keySet());
+
+            // 过滤掉已完成一轮测评的数据（即关联问卷的assessmentResultId都相同的数据）
+            List<QuestionnaireResultDO> filteredResults = new ArrayList<>();
+            for (Map.Entry<Long, List<QuestionnaireResultDO>> entry : groupedByAssessmentResultId.entrySet()) {
+                List<QuestionnaireResultDO> groupResults = entry.getValue();
+                Set<Long> groupQuestionnaireIds = groupResults.stream()
+                        .map(QuestionnaireResultDO::getQuestionnaireId)
+                        .collect(Collectors.toSet());
+
+                // 如果这组数据包含的问卷ID数量等于总关联问卷数量，说明完成了一轮测评，需要过滤掉
+                if (groupQuestionnaireIds.size() < questionnaireIds.size()) {
+                    filteredResults.addAll(groupResults);
+                } else {
+                    System.out.println("[getPublishedAppQuestionnairePage] 过滤掉完整一轮的测评数据，assessmentResultId: " + entry.getKey());
+                }
+            }
+
+            if (filteredResults.isEmpty()) {
+                // 如果过滤后数据为空，需要进一步检查assessmentResultId的状态
+                boolean hasIncompleteAssessment = false;
+                
+                // 检查原始分组数据中的assessmentResultId状态
+                for (Long assessmentResultId : groupedByAssessmentResultId.keySet()) {
+                    AssessmentResultDO assessmentResult = assessmentResultMapper.selectById(assessmentResultId);
+                    if (assessmentResult == null || assessmentResult.getStatus() == null || assessmentResult.getStatus() == 0) {
+                        hasIncompleteAssessment = true;
+                        System.out.println("[getPublishedAppQuestionnairePage] assessmentResultId: " + assessmentResultId + " 状态为进行中(0)或不存在，保持原有完成状态");
+                        break; // 找到一个status为0的就足够了
+                    }
+                }
+                
+                if (hasIncompleteAssessment) {
+                    // 如果存在任一assessmentResultId状态为0，保持原有的完成状态逻辑
+                    completedQuestionnaireIds = results.stream()
+                            .map(QuestionnaireResultDO::getQuestionnaireId)
+                            .collect(Collectors.toSet());
+                    System.out.println("[getPublishedAppQuestionnairePage] 过滤后数据为空但存在进行中的测评结果，保持原有完成状态");
+                } else {
+                    // 所有assessmentResultId状态都为1，标记所有问卷为未完成
+                    completedQuestionnaireIds = new HashSet<>();
+                    System.out.println("[getPublishedAppQuestionnairePage] 过滤后数据为空且所有测评结果都已完成，标记所有问卷为未完成");
+                }
+            } else {
+                // 标记有assessmentResultId的问卷为已完成
+                completedQuestionnaireIds = filteredResults.stream()
+                        .map(QuestionnaireResultDO::getQuestionnaireId)
+                        .collect(Collectors.toSet());
+                System.out.println("[getPublishedAppQuestionnairePage] 标记为已完成的问卷ID: " + completedQuestionnaireIds);
+            }
+        } else {
+            // 6. 原有逻辑：根据questionnaireId去重
+            completedQuestionnaireIds = results.stream()
+                    .map(QuestionnaireResultDO::getQuestionnaireId)
+                    .collect(Collectors.toSet());
+        }
+
+        // 7. 先转换为VO对象
+        List<AppQuestionnaireRespVO> appQuestionnaireList = QuestionnaireConvert.INSTANCE.convertAppList(questionnaires);
+
+        // 8. 存在questionnaireId，则标记这个问卷为已完成（completed设为true,否则为false）
+        appQuestionnaireList.forEach(appQuestionnaire -> {
+            boolean completed = completedQuestionnaireIds.contains(appQuestionnaire.getId());
+            appQuestionnaire.setCompleted(completed);
+        });
+
+        // 9. 返回结果
+        return appQuestionnaireList;
     }
 
     @Override

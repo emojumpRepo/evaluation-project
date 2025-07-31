@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.validation.Valid;
+import javax.annotation.security.PermitAll;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 
@@ -44,12 +45,14 @@ public class AppAssessmentController {
 
     @GetMapping("/list")
     @Operation(summary = "获得测评列表")
+    @PermitAll
     public CommonResult<PageResult<AppAssessmentRespVO>> getAssessmentList(@Valid AppAssessmentPageReqVO pageReqVO) {
         return success(assessmentService.getAppAssessmentPage(pageReqVO));
     }
 
     @GetMapping("/published")
     @Operation(summary = "获得已发布测评列表")
+    @PermitAll
     public CommonResult<PageResult<AppAssessmentRespVO>> getPublishedAssessmentList(@Valid AppAssessmentPageReqVO pageReqVO) {
         return success(assessmentService.getPublishedAssessmentPage(pageReqVO));
     }

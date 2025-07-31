@@ -11,6 +11,7 @@ import cn.iocoder.yudao.module.emojump.controller.app.questionnaire.vo.AppQuesti
 import cn.iocoder.yudao.module.emojump.framework.survey.vo.ExternalServiceResult;
 
 import javax.validation.Valid;
+import java.util.List;
 
 /**
  * 问卷管理 Service 接口
@@ -56,6 +57,13 @@ public interface QuestionnaireService {
     PageResult<QuestionnaireRespVO> getQuestionnairePage(QuestionnairePageReqVO pageReqVO);
 
     /**
+     * 获得全部问卷列表
+     *
+     * @return 问卷列表
+     */
+    List<QuestionnaireRespVO> getAllQuestionnaireList();
+
+    /**
      * 发布问卷
      *
      * @param id 编号
@@ -96,12 +104,13 @@ public interface QuestionnaireService {
     AppQuestionnaireRespVO getAppQuestionnaire(Long id);
 
     /**
-     * 获得已发布问卷分页（App端）
+     * 获得已发布的问卷列表
      *
-     * @param pageReqVO 分页查询
-     * @return 问卷分页
+     * @param assessmentId 评估ID
+     * @param babyId 宝宝ID
+     * @return 问卷列表
      */
-    PageResult<AppQuestionnaireRespVO> getPublishedAppQuestionnairePage(AppQuestionnairePageReqVO pageReqVO);
+    List<AppQuestionnaireRespVO> getPublishedAppQuestionnairePage(Long assessmentId, Long babyId);
 
     /**
      * 获得问卷访问链接
