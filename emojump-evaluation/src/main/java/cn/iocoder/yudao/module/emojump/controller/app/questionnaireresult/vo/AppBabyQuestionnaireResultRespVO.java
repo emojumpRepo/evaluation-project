@@ -18,6 +18,18 @@ public class AppBabyQuestionnaireResultRespVO {
     
     @Schema(description = "测评包含的问卷数量", example = "3")
     private Integer questionnaireCount;
+
+    @Schema(description = "总体得分", example = "85.5")
+    private Double overallScore;
+
+    @Schema(description = "总体评级", example = "优秀")
+    private String overallLevel;
+
+    @Schema(description = "完成时间", example = "2024-01-15 10:30:00")
+    private LocalDateTime completedTime;
+
+    @Schema(description = "总体测评报告", example = "测评报告")
+    private String overallReport;
     
     @Schema(description = "问卷结果列表")
     private List<QuestionnaireResultItem> questionnaireResults;

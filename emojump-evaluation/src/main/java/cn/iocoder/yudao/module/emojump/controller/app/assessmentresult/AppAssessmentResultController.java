@@ -3,6 +3,8 @@ package cn.iocoder.yudao.module.emojump.controller.app.assessmentresult;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.module.emojump.controller.admin.assessmentresult.vo.GenerateAssessmentResultRespVO;
 import cn.iocoder.yudao.module.emojump.controller.admin.assessmentresult.vo.AssessmentResultRespVO;
+import cn.iocoder.yudao.module.emojump.controller.app.assessmentresult.vo.UserAssessmentRecordsReqVO;
+import cn.iocoder.yudao.module.emojump.controller.app.assessmentresult.vo.UserAssessmentRecordsRespVO;
 import cn.iocoder.yudao.module.emojump.service.assessmentresult.AssessmentResultService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -81,6 +83,25 @@ public class AppAssessmentResultController {
             
             // 返回null表示没有找到记录
             return success(null);
+        }
+    }
+
+    @PostMapping("/user-assessment-records")
+    @Operation(summary = "查询用户测评记录")
+    public CommonResult<UserAssessmentRecordsRespVO> getUserAssessmentRecords(@Valid @RequestBody UserAssessmentRecordsReqVO reqVO) {
+        try {
+            // 调用服务查询用户测评记录
+            UserAssessmentRecordsRespVO respVO = assessmentResultService.getUserAssessmentRecords(reqVO.getUserId());
+            
+            return success(respVO);
+            
+        } catch (Exception e) {
+            log.error("[getUserAssessmentRecords] 查询用户测评记录失败，用户ID: {}, 错误: {}", 
+                reqVO.getUserId(), e.getMessage(), e);
+            // 返回空列表而不是抛出异常
+            UserAssessmentRecordsRespVO emptyResp = new UserAssessmentRecordsRespVO();
+            emptyResp.setAssessmentIds(java.util.Collections.emptyList());
+            return success(emptyResp);
         }
     }
 

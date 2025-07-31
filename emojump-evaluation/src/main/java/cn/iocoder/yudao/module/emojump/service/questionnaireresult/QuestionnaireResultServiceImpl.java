@@ -459,19 +459,38 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
 
     @Override
     public List<AppBabyQuestionnaireResultRespVO> getBabyQuestionnaireResults(Long babyId) {
-        // 根据 babyId 获取 assessmentId 列表并去重（查emo_assessment_result表）
-        List<Long> assessmentIds = assessmentResultMapper.selectList(
+        // 根据 babyId 获取测评结果列表（查emo_assessment_result表）
+        List<AssessmentResultDO> assessmentResults = assessmentResultMapper.selectList(
                 new LambdaQueryWrapperX<AssessmentResultDO>()
                         .eq(AssessmentResultDO::getBabyId, babyId)
-                        .select(AssessmentResultDO::getAssessmentId)
-        ).stream()
+        );
+
+        if (assessmentResults.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 获取去重的assessmentId列表
+        List<Long> assessmentIds = assessmentResults.stream()
                 .map(AssessmentResultDO::getAssessmentId)
                 .distinct()
                 .collect(Collectors.toList());
 
-        if (assessmentIds.isEmpty()) {
-            return new ArrayList<>();
-        }
+        // 创建assessmentId到AssessmentResultDO的映射
+        Map<Long, AssessmentResultDO> assessmentResultMap = assessmentResults.stream()
+                .collect(Collectors.toMap(
+                        AssessmentResultDO::getAssessmentId,
+                        assessmentResult -> assessmentResult,
+                        (existing, replacement) -> {
+                            // 如果有多个相同assessmentId的记录，选择最新完成的一个
+                            if (replacement.getCompletedTime() != null && existing.getCompletedTime() != null) {
+                                return replacement.getCompletedTime().isAfter(existing.getCompletedTime()) ? replacement : existing;
+                            } else if (replacement.getCompletedTime() != null) {
+                                return replacement;
+                            } else {
+                                return existing;
+                            }
+                        }
+                ));
 
         System.out.println("[getBabyQuestionnaireResults] 找到测评ID列表: " + assessmentIds);
 
@@ -515,7 +534,6 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
                             .eq(EmoQuestionnaireResultDO::getBabyId, babyId)
                             .eq(EmoQuestionnaireResultDO::getAssessmentId, assessmentId)
                             .eq(EmoQuestionnaireResultDO::getQuestionnaireId, questionnaireId)
-                            .isNotNull(EmoQuestionnaireResultDO::getCompletedTime)
                             .orderByDesc(EmoQuestionnaireResultDO::getCompletedTime)
                             .last("LIMIT 1")
                     );
@@ -534,6 +552,16 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
             result.setAssessmentTitle(assessmentTitleMap.get(assessmentId));
             List<Long> questionnaireIds = assessmentQuestionnaireMap.get(assessmentId);
             result.setQuestionnaireCount(questionnaireIds != null ? questionnaireIds.size() : 0);
+
+            // 设置从emo_assessment_result表查询的字段
+            AssessmentResultDO assessmentResult = assessmentResultMap.get(assessmentId);
+            if (assessmentResult != null) {
+                result.setOverallScore(assessmentResult.getOverallScore() != null ? 
+                    assessmentResult.getOverallScore().doubleValue() : null);
+                result.setOverallLevel(assessmentResult.getOverallLevel());
+                result.setCompletedTime(assessmentResult.getCompletedTime());
+                result.setOverallReport(assessmentResult.getOverallReport());
+            }
 
             // 构建问卷结果列表
             List<AppBabyQuestionnaireResultRespVO.QuestionnaireResultItem> questionnaireResults = new ArrayList<>();

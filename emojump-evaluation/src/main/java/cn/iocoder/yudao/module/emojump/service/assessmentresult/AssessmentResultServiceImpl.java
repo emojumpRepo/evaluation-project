@@ -6,6 +6,7 @@ import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.emojump.controller.admin.assessmentresult.vo.AssessmentResultPageReqVO;
 import cn.iocoder.yudao.module.emojump.controller.admin.assessmentresult.vo.AssessmentResultRespVO;
 import cn.iocoder.yudao.module.emojump.controller.admin.assessmentresult.vo.QuestionnaireResultRespVO;
+import cn.iocoder.yudao.module.emojump.controller.app.assessmentresult.vo.UserAssessmentRecordsRespVO;
 import cn.iocoder.yudao.module.emojump.convert.assessment.AssessmentResultConvert;
 import cn.iocoder.yudao.module.emojump.dal.dataobject.assessment.AssessmentDO;
 import cn.iocoder.yudao.module.emojump.dal.dataobject.assessment.AssessmentResultDO;
@@ -402,6 +403,51 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
         }
 
         log.info("[getLatestAssessmentResult] 成功获取最新测评结果，测评结果ID: {}", latestResult.getId());
+        return respVO;
+    }
+
+    @Override
+    public UserAssessmentRecordsRespVO getUserAssessmentRecords(Long userId) {
+        log.info("[getUserAssessmentRecords] 开始查询用户测评记录，用户ID: {}", userId);
+        
+        // 1. 根据userId查询宝宝ID列表
+        List<MemberBabyDO> babyList = memberBabyService.getBabyListByUserId(userId);
+        if (babyList == null || babyList.isEmpty()) {
+            log.info("[getUserAssessmentRecords] 用户没有宝宝信息，用户ID: {}", userId);
+            UserAssessmentRecordsRespVO respVO = new UserAssessmentRecordsRespVO();
+            respVO.setAssessmentIds(Collections.emptyList());
+            return respVO;
+        }
+        
+        List<Long> babyIds = CollectionUtils.convertList(babyList, MemberBabyDO::getId);
+        log.info("[getUserAssessmentRecords] 查询到宝宝ID列表: {}", babyIds);
+        
+        // 2. 根据babyId列表查询问卷结果数据
+        List<EmoQuestionnaireResultDO> questionnaireResults = emoQuestionnaireResultMapper.selectList(
+            new LambdaQueryWrapperX<EmoQuestionnaireResultDO>()
+                .in(EmoQuestionnaireResultDO::getBabyId, babyIds)
+                .isNotNull(EmoQuestionnaireResultDO::getAssessmentId)
+        );
+        
+        log.info("[getUserAssessmentRecords] 查询到问卷结果数据 {} 条", questionnaireResults.size());
+        
+        // 3. 根据assessmentId去重 (已注释，直接返回原始数据)
+        // List<Long> distinctAssessmentIds = questionnaireResults.stream()
+        //     .map(EmoQuestionnaireResultDO::getAssessmentId)
+        //     .distinct()
+        //     .collect(Collectors.toList());
+        
+        // 直接获取所有assessmentId，不去重
+        List<Long> assessmentIds = questionnaireResults.stream()
+            .map(EmoQuestionnaireResultDO::getAssessmentId)
+            .collect(Collectors.toList());
+        
+        log.info("[getUserAssessmentRecords] 测评ID列表: {}", assessmentIds);
+        
+        // 4. 构造响应对象
+        UserAssessmentRecordsRespVO respVO = new UserAssessmentRecordsRespVO();
+        respVO.setAssessmentIds(assessmentIds);
+        
         return respVO;
     }
 }
