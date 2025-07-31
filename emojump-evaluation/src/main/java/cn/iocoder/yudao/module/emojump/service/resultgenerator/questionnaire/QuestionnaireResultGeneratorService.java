@@ -61,8 +61,8 @@ public class QuestionnaireResultGeneratorService {
             // 1. 获取对应的结果生成器
             QuestionnaireResultGenerator generator = getGenerator(questionnaireId);
 
-            // 2. 解析答案数据
-            QuestionnaireAnswerDTO answerDTO = parseAnswerData(answerDataJson);
+            // 2. 解析答案数据，并设置问卷ID
+            QuestionnaireAnswerDTO answerDTO = parseAnswerData(answerDataJson, questionnaireId);
 
             // 3. 生成结果
             QuestionnaireResultDTO result = generator.generateResult(answerDTO);
@@ -96,9 +96,10 @@ public class QuestionnaireResultGeneratorService {
      * 解析答案数据
      *
      * @param answerDataJson 答案JSON数据
+     * @param questionnaireId 问卷ID
      * @return 答案DTO
      */
-    private QuestionnaireAnswerDTO parseAnswerData(String answerDataJson) {
+    private QuestionnaireAnswerDTO parseAnswerData(String answerDataJson, Long questionnaireId) {
         try {
             // 解析JSON数组格式的答案数据
             QuestionnaireAnswerDTO.AnswerItem[] answerArray =
@@ -106,6 +107,7 @@ public class QuestionnaireResultGeneratorService {
 
             return QuestionnaireAnswerDTO.builder()
                     .answers(Arrays.asList(answerArray))
+                    .questionnaireId(questionnaireId) // 设置问卷ID
                     .build();
 
         } catch (Exception e) {
