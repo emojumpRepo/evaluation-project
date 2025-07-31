@@ -47,6 +47,15 @@ public interface AssessmentResultService {
      * @param babyId 宝宝ID
      * @return 历史测评结果列表
      */
-    List<cn.iocoder.yudao.module.emojump.controller.app.assessmentresult.vo.HistoryAssessmentResultRespVO> getHistoryAssessmentResults(Long assessmentId, Long babyId);
+    List<AssessmentResultRespVO> getHistoryAssessmentResults(Long assessmentId, Long babyId);
+
+    /**
+     * 获取最新测评结果记录
+     *
+     * @param assessmentId 测评ID
+     * @param babyId 宝宝ID
+     * @return 最新测评结果记录
+     */
+    AssessmentResultRespVO getLatestAssessmentResult(Long assessmentId, Long babyId);
 
 }

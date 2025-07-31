@@ -22,6 +22,9 @@ public class QuestionnaireResultRespVO {
     @Schema(description = "问卷结果数据（JSON格式）")
     private String resultData;
 
+    @Schema(description = "用户填写的答案数据（JSON格式）")
+    private String answerData;
+
     @Schema(description = "问卷得分", example = "90")
     private BigDecimal score;
 
