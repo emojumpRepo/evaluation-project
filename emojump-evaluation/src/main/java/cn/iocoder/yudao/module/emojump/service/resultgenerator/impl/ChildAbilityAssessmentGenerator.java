@@ -54,19 +54,19 @@ public class ChildAbilityAssessmentGenerator extends AbstractQuestionnaireResult
 
         // 2. 计算通过项目的累计分数
         double passedScore = calculatePassedScore(answerDTO.getAnswers(), baselineAge);
-
+        
         // 3. 计算智龄
         double mentalAge = baselineAge + passedScore;
-
+        
         // 4. 生成结果摘要
-        QuestionnaireResultDTO.ResultSummary summary = generateSummary(mentalAge);
-
+        QuestionnaireResultDTO.ResultSummary summary = generateSummary(mentalAge, answerDTO.getQuestionnaireId());
+        
         // 5. 生成详细结果
         List<QuestionnaireResultDTO.ResultDetail> details = generateDetails(mentalAge, answerDTO.getAnswers());
-
+        
         // 6. 构建resultData
         String resultData = buildResultData(summary, details);
-
+        
         return QuestionnaireResultDTO.builder()
                 .score(BigDecimal.valueOf(mentalAge))
                 .level("") // 智龄评估不需要评级
@@ -169,11 +169,11 @@ public class ChildAbilityAssessmentGenerator extends AbstractQuestionnaireResult
     /**
      * 生成结果摘要
      */
-    private QuestionnaireResultDTO.ResultSummary generateSummary(double mentalAge) {
-        String interpretation = getMentalAgeInterpretation(mentalAge);
-        int[] range = getSummaryRange(mentalAge);
-        String description = getSummaryDescription(mentalAge);
-        QuestionnaireResultDTO.Advice advice = generateSummaryAdvice(mentalAge);
+    private QuestionnaireResultDTO.ResultSummary generateSummary(double mentalAge, Long questionnaireId) {
+        String interpretation = getMentalAgeInterpretation(mentalAge, questionnaireId);
+        int[] range = getSummaryRange(mentalAge, questionnaireId);
+        String description = getSummaryDescription(mentalAge, questionnaireId);
+        QuestionnaireResultDTO.Advice advice = generateSummaryAdvice(mentalAge, questionnaireId);
 
         return QuestionnaireResultDTO.ResultSummary.builder()
                 .label("智龄评估")
@@ -223,35 +223,116 @@ public class ChildAbilityAssessmentGenerator extends AbstractQuestionnaireResult
     /**
      * 获取智龄解释
      */
-    private String getMentalAgeInterpretation(double mentalAge) {
-        return String.format("智龄为%.1f个月，建议结合儿童实际年龄进行综合评估。", mentalAge);
+    private String getMentalAgeInterpretation(double mentalAge, Long questionnaireId) {
+        String base;
+        switch (questionnaireId != null ? questionnaireId.intValue() : -1) {
+            case 17:
+                base = String.format("精细动作智龄为%.1f个月。", mentalAge)
+                    + " 精细动作能力反映了孩子手部小肌肉的灵活性和协调性，是日常生活自理、书写绘画等能力的基础。"
+                    + " 如果智龄与实际年龄基本相符，说明孩子精细动作发展良好。"
+                    + " 若智龄明显低于实际年龄，建议家长多安排手工、拼插、绘画等活动，耐心引导孩子多练习，必要时可咨询康复或早教专业人士。";
+                break;
+            case 18:
+                base = String.format("适应能力智龄为%.1f个月。", mentalAge)
+                    + " 适应能力体现了孩子的生活自理和环境应对能力。"
+                    + " 智龄与实际年龄相符，说明孩子能较好地独立完成日常任务。"
+                    + " 若智龄偏低，建议家长逐步放手，让孩子多参与穿衣、如厕、整理物品等生活实践，增强独立性。";
+                break;
+            case 19:
+                base = String.format("语言能力智龄为%.1f个月。", mentalAge)
+                    + " 语言能力是孩子认知、社交和学习的基础。"
+                    + " 智龄与实际年龄相符，说明孩子语言理解和表达能力发展正常。"
+                    + " 若智龄偏低，建议家长多与孩子交流、讲故事、鼓励表达，必要时可寻求语言训练师帮助。";
+                break;
+            case 20:
+                base = String.format("社会行为智龄为%.1f个月。", mentalAge)
+                    + " 社会行为能力反映了孩子与同伴交往、合作、情绪管理等方面的发展。"
+                    + " 智龄与实际年龄相符，说明孩子能较好地适应集体生活。"
+                    + " 若智龄偏低，建议家长多带孩子参与集体活动，教会其分享、轮流、表达情绪，帮助其建立良好的人际关系。";
+                break;
+            case 21:
+                base = String.format("大运动智龄为%.1f个月。", mentalAge)
+                    + " 大运动能力是孩子身体健康、空间感知和平衡能力的体现。"
+                    + " 智龄与实际年龄相符，说明孩子运动发育良好。"
+                    + " 若智龄偏低，建议家长多安排户外运动，鼓励孩子尝试多种大运动项目，提升体能和协调性。";
+                break;
+            default:
+                base = String.format("智龄为%.1f个月。", mentalAge)
+                    + " 智龄是对孩子当前能力发展的一个参考指标，建议结合实际年龄和日常表现综合评估。"
+                    + " 如有疑问或发现发展迟缓，建议及时咨询专业人士。";
+        }
+        return base;
     }
 
     /**
      * 获取总分的阈值范围
      */
-    private int[] getSummaryRange(double mentalAge) {
+    private int[] getSummaryRange(double mentalAge, Long questionnaireId) {
         return new int[]{0, 100};
     }
 
     /**
      * 获取总分的描述
      */
-    private String getSummaryDescription(double mentalAge) {
-        return "智龄评估完成，建议结合儿童实际年龄进行综合评估。";
+    private String getSummaryDescription(double mentalAge, Long questionnaireId) {
+        switch (questionnaireId != null ? questionnaireId.intValue() : -1) {
+            case 17: return "儿童精细动作能力是指手部小肌肉群的灵活性、协调性及操作能力，如抓握、捏取、拼插、绘画等。精细动作的发展直接影响孩子日常生活自理、学习书写、绘画等能力，是认知和大脑发育的重要基础。";
+            case 18: return "儿童适应能力是指孩子对环境变化的应对、自理能力及独立生活能力，包括穿衣、如厕、进食、整理物品等。良好的适应能力有助于孩子顺利融入集体生活，增强自信心和独立性。";
+            case 19: return "儿童语言能力包括语言理解和表达，是认知、社交和学习的基础。良好的语言能力有助于孩子表达需求、理解指令、与同伴交流、学习新知识。";
+            case 20: return "儿童社会行为能力是指孩子与他人交往、合作、分享、遵守规则、情绪管理等方面的能力。良好的社会行为有助于孩子建立友谊、适应集体生活、形成积极人格。";
+            case 21: return "儿童大运动能力是指全身大肌肉群的运动与协调能力，如走、跑、跳、攀爬、投掷等。大运动的发展有助于孩子身体健康、空间感知、平衡能力和自信心的提升。";
+            default: return "智龄评估完成，建议结合儿童实际年龄进行综合评估。";
+        }
     }
 
     /**
      * 生成总分的建议
      */
-    private QuestionnaireResultDTO.Advice generateSummaryAdvice(double mentalAge) {
+    private QuestionnaireResultDTO.Advice generateSummaryAdvice(double mentalAge, Long questionnaireId) {
         List<String> content = new ArrayList<>();
-        String description = "智龄评估建议";
-        
-        content.add("建议提供儿童实际年龄信息，以便进行更准确的评估");
-        content.add("智龄评估结果仅供参考，建议结合其他评估工具");
-        content.add("如有疑问，建议咨询专业儿童发展专家");
-
+        String description;
+        switch (questionnaireId != null ? questionnaireId.intValue() : -1) {
+            case 17:
+                description = "精细动作能力提升建议";
+                content.add("鼓励孩子多做手工活动，如拼图、串珠、剪纸、折纸、橡皮泥捏塑等，锻炼手指灵活性。");
+                content.add("日常生活中让孩子自己扣纽扣、拉拉链、系鞋带、用勺子吃饭等，提升自理能力。");
+                content.add("提供画笔、彩泥等工具，鼓励孩子自由绘画、涂鸦，发展手眼协调。");
+                content.add("避免过度包办，给予孩子尝试和练习的机会。");
+                break;
+            case 18:
+                description = "适应能力提升建议";
+                content.add("鼓励孩子自己穿脱衣服、鞋袜，逐步减少成人帮助。");
+                content.add("让孩子参与简单家务，如收拾玩具、整理床铺、擦桌子等，培养责任感。");
+                content.add("训练孩子独立如厕、洗手、刷牙等生活技能。");
+                content.add("在新环境中多给予鼓励和正向引导，帮助孩子适应变化。");
+                break;
+            case 19:
+                description = "语言能力提升建议";
+                content.add("多与孩子对话，耐心倾听并鼓励其表达自己的想法和感受。");
+                content.add("每天坚持亲子共读，讲故事、看图书，丰富词汇和表达能力。");
+                content.add("鼓励孩子描述日常见闻、讲述经历，锻炼叙述能力。");
+                content.add("通过儿歌、绕口令、角色扮演等游戏提升语言兴趣。");
+                break;
+            case 20:
+                description = "社会行为能力提升建议";
+                content.add("多带孩子参与集体活动，如亲子班、兴趣小组、户外游戏，锻炼社交能力。");
+                content.add("鼓励孩子学会分享、轮流、等待，理解并遵守游戏规则。");
+                content.add("关注孩子情绪变化，教会其用语言表达情绪，学会自我调节。");
+                content.add("家长以身作则，示范良好的人际交往方式。");
+                break;
+            case 21:
+                description = "大运动能力提升建议";
+                content.add("鼓励孩子多进行户外运动，如跑步、跳绳、踢球、骑车、攀爬等，增强体能。");
+                content.add("创设安全的运动环境，让孩子自由探索和尝试各种大运动项目。");
+                content.add("亲子一起参与运动，提升孩子的运动兴趣和坚持性。");
+                content.add("关注孩子动作发展进程，发现异常及时咨询专业人士。");
+                break;
+            default:
+                description = "智龄评估建议";
+                content.add("建议提供儿童实际年龄信息，以便进行更准确的评估。");
+                content.add("智龄评估结果仅供参考，建议结合其他评估工具。");
+                content.add("如有疑问，建议咨询专业儿童发展专家。");
+        }
         return QuestionnaireResultDTO.Advice.builder()
                 .description(description)
                 .content(content)

@@ -20,6 +20,11 @@ import java.util.Map;
 public class QuestionnaireAnswerDTO {
 
     /**
+     * 问卷ID
+     */
+    private Long questionnaireId;
+
+    /**
      * 问卷答案列表
      */
     private List<AnswerItem> answers;
