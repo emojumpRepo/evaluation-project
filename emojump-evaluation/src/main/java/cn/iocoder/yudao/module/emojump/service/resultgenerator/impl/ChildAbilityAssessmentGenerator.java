@@ -62,7 +62,7 @@ public class ChildAbilityAssessmentGenerator extends AbstractQuestionnaireResult
         QuestionnaireResultDTO.ResultSummary summary = generateSummary(mentalAge, answerDTO.getQuestionnaireId());
         
         // 5. 生成详细结果
-        List<QuestionnaireResultDTO.ResultDetail> details = generateDetails(mentalAge, answerDTO.getAnswers());
+        List<QuestionnaireResultDTO.ResultDetail> details = generateDetails(mentalAge, answerDTO.getAnswers(), answerDTO.getQuestionnaireId());
         
         // 6. 构建resultData
         String resultData = buildResultData(summary, details);
@@ -189,11 +189,11 @@ public class ChildAbilityAssessmentGenerator extends AbstractQuestionnaireResult
     /**
      * 生成详细结果
      */
-    private List<QuestionnaireResultDTO.ResultDetail> generateDetails(double mentalAge, List<QuestionnaireAnswerDTO.AnswerItem> answers) {
+    private List<QuestionnaireResultDTO.ResultDetail> generateDetails(double mentalAge, List<QuestionnaireAnswerDTO.AnswerItem> answers, Long questionnaireId) {
         List<QuestionnaireResultDTO.ResultDetail> details = new ArrayList<>();
 
         // 智龄详细结果
-        details.add(createMentalAgeDetail(mentalAge, answers));
+        details.add(createMentalAgeDetail(mentalAge, answers, questionnaireId));
 
         return details;
     }
@@ -201,15 +201,13 @@ public class ChildAbilityAssessmentGenerator extends AbstractQuestionnaireResult
     /**
      * 创建智龄详细结果
      */
-    private QuestionnaireResultDTO.ResultDetail createMentalAgeDetail(double mentalAge, List<QuestionnaireAnswerDTO.AnswerItem> answers) {
+    private QuestionnaireResultDTO.ResultDetail createMentalAgeDetail(double mentalAge, List<QuestionnaireAnswerDTO.AnswerItem> answers, Long questionnaireId) {
         // 计算基线月龄和累计分数
         double baselineAge = calculateBaselineAge(answers);
         double passedScore = calculatePassedScore(answers, baselineAge);
         
-        // 构建详细的计算公式字符串
-        String detailedFormula = buildDetailedFormula(answers, baselineAge, passedScore);
-        String formula = String.format("智龄 = %.0f + %.1f = %.1f个月", baselineAge, passedScore, mentalAge);
-        String interpretation = String.format("智龄为%.1f个月，计算公式：%s，详细计算：%s，表示儿童在认知发展方面的能力水平。", mentalAge, formula, detailedFormula);
+        // 根据问卷ID生成不同的描述
+        String interpretation = getMentalAgeDetailInterpretation(mentalAge, baselineAge, passedScore, questionnaireId);
 
         return QuestionnaireResultDTO.ResultDetail.builder()
                 .label("智龄")
@@ -262,6 +260,37 @@ public class ChildAbilityAssessmentGenerator extends AbstractQuestionnaireResult
                     + " 如有疑问或发现发展迟缓，建议及时咨询专业人士。";
         }
         return base;
+    }
+
+    /**
+     * 获取智龄详细解释
+     */
+    private String getMentalAgeDetailInterpretation(double mentalAge, double baselineAge, double passedScore, Long questionnaireId) {
+        switch (questionnaireId != null ? questionnaireId.intValue() : -1) {
+            case 17:
+                return String.format("精细动作智龄为%.1f个月。基线月龄%.0f个月，累计分数%.1f分。", mentalAge, baselineAge, passedScore)
+                    + " 精细动作能力是孩子手部小肌肉协调性的体现，直接影响日常生活自理、书写绘画等能力。"
+                    + " 建议家长多安排手工活动，如拼图、串珠、剪纸等，锻炼手指灵活性。";
+            case 18:
+                return String.format("适应能力智龄为%.1f个月。基线月龄%.0f个月，累计分数%.1f分。", mentalAge, baselineAge, passedScore)
+                    + " 适应能力反映了孩子的生活自理和环境应对能力。"
+                    + " 建议家长逐步放手，让孩子多参与穿衣、如厕、整理物品等生活实践。";
+            case 19:
+                return String.format("语言能力智龄为%.1f个月。基线月龄%.0f个月，累计分数%.1f分。", mentalAge, baselineAge, passedScore)
+                    + " 语言能力是孩子认知、社交和学习的基础。"
+                    + " 建议家长多与孩子交流、讲故事、鼓励表达，丰富语言环境。";
+            case 20:
+                return String.format("社会行为智龄为%.1f个月。基线月龄%.0f个月，累计分数%.1f分。", mentalAge, baselineAge, passedScore)
+                    + " 社会行为能力反映了孩子与同伴交往、合作、情绪管理等方面的发展。"
+                    + " 建议家长多带孩子参与集体活动，教会其分享、轮流、表达情绪。";
+            case 21:
+                return String.format("大运动智龄为%.1f个月。基线月龄%.0f个月，累计分数%.1f分。", mentalAge, baselineAge, passedScore)
+                    + " 大运动能力是孩子身体健康、空间感知和平衡能力的体现。"
+                    + " 建议家长多安排户外运动，鼓励孩子尝试多种大运动项目。";
+            default:
+                return String.format("智龄为%.1f个月。基线月龄%.0f个月，累计分数%.1f分。", mentalAge, baselineAge, passedScore)
+                    + " 智龄是对孩子当前能力发展的一个参考指标，建议结合实际年龄和日常表现综合评估。";
+        }
     }
 
     /**
