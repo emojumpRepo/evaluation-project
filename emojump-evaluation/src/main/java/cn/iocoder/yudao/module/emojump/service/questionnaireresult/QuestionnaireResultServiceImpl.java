@@ -40,6 +40,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.LinkedHashSet;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.module.emojump.enums.ErrorCodeConstants.QUESTIONNAIRE_NOT_EXISTS;
@@ -459,7 +460,7 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
 
     @Override
     public List<AppBabyQuestionnaireResultRespVO> getBabyQuestionnaireResults(Long babyId) {
-        // 根据 babyId 获取测评结果列表（查emo_assessment_result表）
+        // 1. 根据 babyId 获取测评结果列表
         List<AssessmentResultDO> assessmentResults = assessmentResultMapper.selectList(
                 new LambdaQueryWrapperX<AssessmentResultDO>()
                         .eq(AssessmentResultDO::getBabyId, babyId)
@@ -469,125 +470,133 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
             return new ArrayList<>();
         }
 
-        // 获取去重的assessmentId列表
-        List<Long> assessmentIds = assessmentResults.stream()
-                .map(AssessmentResultDO::getAssessmentId)
-                .distinct()
-                .collect(Collectors.toList());
+        // 2. 提取所有关联的 assessmentId 和 assessmentResultId
+        Set<Long> assessmentIds = new HashSet<>();
+        Set<Long> assessmentResultIds = new HashSet<>();
+        Map<Long, List<AssessmentResultDO>> assessmentResultsByAssessmentId = assessmentResults.stream()
+                .peek(ar -> {
+                    assessmentIds.add(ar.getAssessmentId());
+                    assessmentResultIds.add(ar.getId());
+                })
+                .collect(Collectors.groupingBy(AssessmentResultDO::getAssessmentId));
 
-        // 创建assessmentId到AssessmentResultDO的映射
-        Map<Long, AssessmentResultDO> assessmentResultMap = assessmentResults.stream()
-                .collect(Collectors.toMap(
-                        AssessmentResultDO::getAssessmentId,
-                        assessmentResult -> assessmentResult,
-                        (existing, replacement) -> {
-                            // 如果有多个相同assessmentId的记录，选择最新完成的一个
-                            if (replacement.getCompletedTime() != null && existing.getCompletedTime() != null) {
-                                return replacement.getCompletedTime().isAfter(existing.getCompletedTime()) ? replacement : existing;
-                            } else if (replacement.getCompletedTime() != null) {
-                                return replacement;
-                            } else {
-                                return existing;
-                            }
-                        }
+        // 3. 批量获取测评标题
+        Map<Long, String> assessmentTitleMap = assessmentMapper.selectBatchIds(assessmentIds).stream()
+                .collect(Collectors.toMap(AssessmentDO::getId, AssessmentDO::getTitle));
+
+        // 4. 批量获取测评关联的问卷ID
+        List<AssessmentQuestionnaireDO> assessmentQuestionnaires = assessmentQuestionnaireMapper.selectList(
+                new LambdaQueryWrapperX<AssessmentQuestionnaireDO>()
+                        .in(AssessmentQuestionnaireDO::getAssessmentId, assessmentIds)
+        );
+
+        Map<Long, List<Long>> assessmentQuestionnaireMap = assessmentQuestionnaires.stream()
+                .collect(Collectors.groupingBy(
+                        AssessmentQuestionnaireDO::getAssessmentId,
+                        Collectors.mapping(AssessmentQuestionnaireDO::getQuestionnaireId, Collectors.toList())
                 ));
 
-        System.out.println("[getBabyQuestionnaireResults] 找到测评ID列表: " + assessmentIds);
+        Set<Long> allQuestionnaireIds = assessmentQuestionnaires.stream()
+                .map(AssessmentQuestionnaireDO::getQuestionnaireId)
+                .collect(Collectors.toSet());
 
-        // 获取测评标题(查emo_assessment表)
-        Map<Long, String> assessmentTitleMap = assessmentMapper.selectBatchIds(assessmentIds)
-                .stream()
-                .collect(Collectors.toMap(
-                        AssessmentDO::getId,
-                        AssessmentDO::getTitle
-                ));
+        // 5. 批量获取问卷标题
+        Map<Long, String> questionnaireTitleMap = questionnaireMapper.selectBatchIds(allQuestionnaireIds).stream()
+                .collect(Collectors.toMap(QuestionnaireDO::getId, QuestionnaireDO::getTitle));
 
-        // 获取测评关联的问卷ID(查emo_assessment_questionnaire表)
-        Map<Long, List<Long>> assessmentQuestionnaireMap = new HashMap<>();
-        Set<Long> allQuestionnaireIds = new HashSet<>();
+        // 6. 获取每个 (assessmentId, questionnaireId) 或 (assessmentResultId, questionnaireId) 的最新问卷结果
+        Map<String, EmoQuestionnaireResultDO> latestQuestionnaireResults = new HashMap<>();
+        Map<Long, Map<String, EmoQuestionnaireResultDO>> assessment10SpecificResults = new HashMap<>();
+
         for (Long assessmentId : assessmentIds) {
-            List<AssessmentQuestionnaireDO> questionnaires =
-                    assessmentQuestionnaireMapper.selectByAssessmentId(assessmentId);
-            List<Long> questionnaireIds = questionnaires.stream()
-                    .map(AssessmentQuestionnaireDO::getQuestionnaireId)
-                    .collect(Collectors.toList());
-            assessmentQuestionnaireMap.put(assessmentId, questionnaireIds);
-            allQuestionnaireIds.addAll(questionnaireIds);
-        }
+            List<Long> questionnaireIdsForAssessment = assessmentQuestionnaireMap.get(assessmentId);
+            if (questionnaireIdsForAssessment == null || questionnaireIdsForAssessment.isEmpty()) {
+                continue;
+            }
 
-        // 获取问卷标题(查emo_questionnaire表)
-        Map<Long, String> questionnaireTitleMap = questionnaireMapper.selectBatchIds(new ArrayList<>(allQuestionnaireIds))
-                .stream()
-                .collect(Collectors.toMap(
-                        QuestionnaireDO::getId,
-                        QuestionnaireDO::getTitle
-                ));
-
-        // 获取每个(assessmentId, questionnaireId)的最新结果(查emo_questionnaire_result表)
-        Map<String, EmoQuestionnaireResultDO> latestResultMap = new HashMap<>();
-        for (Long assessmentId : assessmentIds) {
-            List<Long> questionnaireIds = assessmentQuestionnaireMap.get(assessmentId);
-            if (questionnaireIds != null) {
-                for (Long questionnaireId : questionnaireIds) {
-                    List<EmoQuestionnaireResultDO> results = emoQuestionnaireResultMapper.selectList(
-                        new LambdaQueryWrapperX<EmoQuestionnaireResultDO>()
-                            .eq(EmoQuestionnaireResultDO::getBabyId, babyId)
-                            .eq(EmoQuestionnaireResultDO::getAssessmentId, assessmentId)
-                            .eq(EmoQuestionnaireResultDO::getQuestionnaireId, questionnaireId)
-                            .orderByDesc(EmoQuestionnaireResultDO::getCompletedTime)
-                            .last("LIMIT 1")
+            if (assessmentId == 10L) {
+                // 特殊处理 assessmentId 为 10 的情况，其问卷结果与 assessmentResultId 绑定
+                List<AssessmentResultDO> resultsForAssessment10 = assessmentResultsByAssessmentId.get(assessmentId);
+                if (resultsForAssessment10 != null) {
+                    for (AssessmentResultDO ar : resultsForAssessment10) {
+                        Map<String, EmoQuestionnaireResultDO> currentAssessmentResultMap = new HashMap<>();
+                        List<EmoQuestionnaireResultDO> emoResults = emoQuestionnaireResultMapper.selectList(
+                                new LambdaQueryWrapperX<EmoQuestionnaireResultDO>()
+                                        .eq(EmoQuestionnaireResultDO::getAssessmentResultId, ar.getId())
+                                        .in(EmoQuestionnaireResultDO::getQuestionnaireId, questionnaireIdsForAssessment)
+                        );
+                        emoResults.forEach(qr ->
+                                currentAssessmentResultMap.put(ar.getId() + "_" + qr.getQuestionnaireId(), qr)
+                        );
+                        assessment10SpecificResults.put(ar.getId(), currentAssessmentResultMap);
+                    }
+                }
+            } else {
+                // 通用逻辑：获取每个 (assessmentId, questionnaireId) 的最新结果
+                for (Long questionnaireId : questionnaireIdsForAssessment) {
+                    EmoQuestionnaireResultDO latestResult = emoQuestionnaireResultMapper.selectOne(
+                            new LambdaQueryWrapperX<EmoQuestionnaireResultDO>()
+                                    .eq(EmoQuestionnaireResultDO::getBabyId, babyId)
+                                    .eq(EmoQuestionnaireResultDO::getAssessmentId, assessmentId)
+                                    .eq(EmoQuestionnaireResultDO::getQuestionnaireId, questionnaireId)
+                                    .orderByDesc(EmoQuestionnaireResultDO::getCompletedTime)
+                                    .last("LIMIT 1")
                     );
-                    if (!results.isEmpty()) {
-                        latestResultMap.put(assessmentId + "_" + questionnaireId, results.get(0));
-                    }
-                }
-            }
-        }
-
-        // 组装返回数据
-        List<AppBabyQuestionnaireResultRespVO> resultList = new ArrayList<>();
-        for (Long assessmentId : assessmentIds) {
-            AppBabyQuestionnaireResultRespVO result = new AppBabyQuestionnaireResultRespVO();
-            result.setAssessmentId(assessmentId);
-            result.setAssessmentTitle(assessmentTitleMap.get(assessmentId));
-            List<Long> questionnaireIds = assessmentQuestionnaireMap.get(assessmentId);
-            result.setQuestionnaireCount(questionnaireIds != null ? questionnaireIds.size() : 0);
-
-            // 设置从emo_assessment_result表查询的字段
-            AssessmentResultDO assessmentResult = assessmentResultMap.get(assessmentId);
-            if (assessmentResult != null) {
-                result.setOverallScore(assessmentResult.getOverallScore() != null ? 
-                    assessmentResult.getOverallScore().doubleValue() : null);
-                result.setOverallLevel(assessmentResult.getOverallLevel());
-                result.setCompletedTime(assessmentResult.getCompletedTime());
-                result.setOverallReport(assessmentResult.getOverallReport());
-            }
-
-            // 构建问卷结果列表
-            List<AppBabyQuestionnaireResultRespVO.QuestionnaireResultItem> questionnaireResults = new ArrayList<>();
-            if (questionnaireIds != null) {
-                for (Long questionnaireId : questionnaireIds) {
-                    EmoQuestionnaireResultDO latestResult = latestResultMap.get(assessmentId + "_" + questionnaireId);
                     if (latestResult != null) {
-                        AppBabyQuestionnaireResultRespVO.QuestionnaireResultItem item =
-                                new AppBabyQuestionnaireResultRespVO.QuestionnaireResultItem();
-                        item.setId(latestResult.getId());
-                        item.setQuestionnaireId(questionnaireId);
-                        item.setQuestionnaireTitle(questionnaireTitleMap.get(questionnaireId));
-                        item.setCompletedTime(latestResult.getCompletedTime());
-                        item.setScore(latestResult.getScore() != null ? latestResult.getScore().doubleValue() : null);
-                        item.setLevel(latestResult.getLevel());
-                        questionnaireResults.add(item);
+                        latestQuestionnaireResults.put(assessmentId + "_" + questionnaireId, latestResult);
                     }
                 }
             }
-            result.setQuestionnaireResults(questionnaireResults);
-            
-            if (!questionnaireResults.isEmpty()) {
-                resultList.add(result);
-            }
         }
 
+        // 7. 组装最终结果
+        List<AppBabyQuestionnaireResultRespVO> resultList = new ArrayList<>();
+        // 确保按照 assessmentResults 的顺序处理，或者根据业务需求排序
+        for (AssessmentResultDO assessmentResult : assessmentResults) {
+            Long currentAssessmentId = assessmentResult.getAssessmentId();
+            AppBabyQuestionnaireResultRespVO respVO = new AppBabyQuestionnaireResultRespVO();
+            respVO.setAssessmentId(currentAssessmentId);
+            respVO.setAssessmentTitle(assessmentTitleMap.get(currentAssessmentId));
+            respVO.setOverallScore(assessmentResult.getOverallScore() != null ? assessmentResult.getOverallScore().doubleValue() : null);
+            respVO.setOverallLevel(assessmentResult.getOverallLevel());
+            respVO.setCompletedTime(assessmentResult.getCompletedTime());
+            respVO.setOverallReport(assessmentResult.getOverallReport());
+
+            List<Long> associatedQuestionnaireIds = assessmentQuestionnaireMap.get(currentAssessmentId);
+            respVO.setQuestionnaireCount(associatedQuestionnaireIds != null ? associatedQuestionnaireIds.size() : 0);
+
+            List<AppBabyQuestionnaireResultRespVO.QuestionnaireResultItem> questionnaireItems = new ArrayList<>();
+            if (associatedQuestionnaireIds != null) {
+                for (Long qId : associatedQuestionnaireIds) {
+                    EmoQuestionnaireResultDO questionnaireResultDO = null;
+                    if (currentAssessmentId == 10L) {
+                        Map<String, EmoQuestionnaireResultDO> specificResults = assessment10SpecificResults.get(assessmentResult.getId());
+                        if (specificResults != null) {
+                            questionnaireResultDO = specificResults.get(assessmentResult.getId() + "_" + qId);
+                        }
+                    } else {
+                        questionnaireResultDO = latestQuestionnaireResults.get(currentAssessmentId + "_" + qId);
+                    }
+
+                    if (questionnaireResultDO != null) {
+                        AppBabyQuestionnaireResultRespVO.QuestionnaireResultItem item = new AppBabyQuestionnaireResultRespVO.QuestionnaireResultItem();
+                        item.setId(questionnaireResultDO.getId());
+                        item.setQuestionnaireId(qId);
+                        item.setQuestionnaireTitle(questionnaireTitleMap.get(qId));
+                        item.setCompletedTime(questionnaireResultDO.getCompletedTime());
+                        item.setScore(questionnaireResultDO.getScore() != null ? questionnaireResultDO.getScore().doubleValue() : null);
+                        item.setLevel(questionnaireResultDO.getLevel());
+                        questionnaireItems.add(item);
+                    }
+                }
+            }
+            respVO.setQuestionnaireResults(questionnaireItems);
+
+            // 只有当有问卷结果时才添加此测评结果
+            if (!questionnaireItems.isEmpty()) {
+                resultList.add(respVO);
+            }
+        }
         return resultList;
     }
 
