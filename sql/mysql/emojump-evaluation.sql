@@ -97,7 +97,6 @@ CREATE TABLE IF NOT EXISTS `emo_assessment_result` (
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
   `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `uk_assessment_baby`(`assessment_id` ASC, `baby_id` ASC) USING BTREE,
   INDEX `idx_assessment_id`(`assessment_id` ASC) USING BTREE,
   INDEX `idx_baby_id`(`baby_id` ASC) USING BTREE,
   INDEX `idx_completed_time`(`completed_time` ASC) USING BTREE
@@ -149,27 +148,3 @@ CREATE TABLE IF NOT EXISTS `emo_questionnaire_access` (
   INDEX `idx_baby_id`(`baby_id` ASC) USING BTREE,
   INDEX `idx_access_time`(`access_time` ASC) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='问卷访问记录表';
-
--- 插入测试数据
-INSERT INTO `emo_questionnaire` (`id`, `title`, `description`, `link`, `type`, `status`, `target_audience`, `estimated_duration`, `access_count`, `completion_count`, `is_open`, `valid_from`, `valid_to`, `remark`, `creator`) VALUES
-(1, '焦虑量表(SAS)', '用于评估焦虑水平的标准量表', 'https://example.com/questionnaire/sas', 4, 1, '学生', 10, 120, 95, b'1', '2024-01-01 00:00:00', '2024-12-31 23:59:59', '焦虑评估量表', 'admin'),
-(2, 'SCL-90量表', '症状自评量表，用于心理健康筛查', 'https://example.com/questionnaire/scl90', 4, 1, '学生', 15, 80, 65, b'1', '2024-01-01 00:00:00', '2024-12-31 23:59:59', '心理健康筛查', 'admin'),
-(3, '抑郁量表(SDS)', '用于评估抑郁程度的标准量表', 'https://example.com/questionnaire/sds', 4, 1, '学生', 8, 90, 72, b'1', '2024-01-01 00:00:00', '2024-12-31 23:59:59', '抑郁评估量表', 'admin'),
-(4, '儿童发展测评问卷', '这是一个评估儿童发展状况的问卷', 'https://example.com/questionnaire/child', 1, 1, '3-6岁儿童', 15, 50, 35, b'1', '2024-01-01 00:00:00', '2024-12-31 23:59:59', '儿童发展测试', 'admin');
-
-INSERT INTO `emo_assessment` (`id`, `title`, `description`, `type`, `status`, `target_audience`, `duration`, `start_time`, `end_time`, `need_appointment`, `max_participants`, `current_participants`, `remark`, `creator`) VALUES
-(1, '入学常规测评', '新生入学心理健康常规测评，包含焦虑和心理健康筛查', 4, 1, '新入学学生', 30, '2024-09-01 09:00:00', '2024-09-30 18:00:00', b'1', 500, 125, '新生入学测评', 'admin'),
-(2, '期中心理健康评估', '期中阶段学生心理健康状况评估', 4, 1, '在校学生', 25, '2024-11-01 09:00:00', '2024-11-15 18:00:00', b'0', 300, 80, '期中评估', 'admin'),
-(3, '儿童发展专项测评', '针对3-6岁儿童的发展状况专项测评', 1, 1, '3-6岁儿童', 20, '2024-10-01 09:00:00', '2024-10-31 18:00:00', b'1', 100, 35, '儿童发展测评', 'admin');
-
--- 测评问卷关联数据
-INSERT INTO `emo_assessment_questionnaire` (`assessment_id`, `questionnaire_id`, `sort_order`, `is_required`, `weight`, `creator`) VALUES
--- 入学常规测评包含焦虑量表和SCL-90量表
-(1, 1, 1, b'1', 0.40, 'admin'), -- 焦虑量表，权重40%
-(1, 2, 2, b'1', 0.60, 'admin'), -- SCL-90量表，权重60%
--- 期中心理健康评估包含焦虑量表、SCL-90量表和抑郁量表
-(2, 1, 1, b'1', 0.30, 'admin'), -- 焦虑量表，权重30%
-(2, 2, 2, b'1', 0.40, 'admin'), -- SCL-90量表，权重40%
-(2, 3, 3, b'1', 0.30, 'admin'), -- 抑郁量表，权重30%
--- 儿童发展专项测评只包含儿童发展问卷
-(3, 4, 1, b'1', 1.00, 'admin'); -- 儿童发展问卷，权重100%

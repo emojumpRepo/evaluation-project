@@ -208,21 +208,31 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
                 })
                 .collect(Collectors.toList());
 
-            // 5. 生成测评结果
-            AssessmentResultDTO assessmentResult = assessmentResultGeneratorService.generateResult(
-                assessmentId, babyId, questionnaireResultItems);
+            // 5. 根据assessmentId判断是否需要生成测评结果
+            if (assessmentId.equals(10L)) {
+                // 生成测评结果
+                AssessmentResultDTO assessmentResult = assessmentResultGeneratorService.generateResult(
+                    assessmentId, babyId, questionnaireResultItems);
 
-            // 6. 更新测评结果记录
-            unfinishedAssessmentResult.setOverallScore(assessmentResult.getOverallScore());
-            unfinishedAssessmentResult.setOverallLevel(assessmentResult.getOverallLevel());
-            unfinishedAssessmentResult.setOverallReport(assessmentResult.getReport());
-            unfinishedAssessmentResult.setStatus(1); // 设置为已完成
-            unfinishedAssessmentResult.setCompletedTime(LocalDateTime.now());
+                // 6. 更新测评结果记录（包含具体结果数据）
+                unfinishedAssessmentResult.setOverallScore(assessmentResult.getOverallScore());
+                unfinishedAssessmentResult.setOverallLevel(assessmentResult.getOverallLevel());
+                unfinishedAssessmentResult.setOverallReport(assessmentResult.getReport());
+                unfinishedAssessmentResult.setStatus(1); // 设置为已完成
+                unfinishedAssessmentResult.setCompletedTime(LocalDateTime.now());
 
-            assessmentResultMapper.updateById(unfinishedAssessmentResult);
+                assessmentResultMapper.updateById(unfinishedAssessmentResult);
 
-            log.info("[generateAssessmentResult] 测评结果生成成功，ID: {}, 总分: {}, 评级: {}", 
-                assessmentResultId, assessmentResult.getOverallScore(), assessmentResult.getOverallLevel());
+                log.info("[generateAssessmentResult] 测评结果生成成功，ID: {}, 总分: {}, 评级: {}", 
+                    assessmentResultId, assessmentResult.getOverallScore(), assessmentResult.getOverallLevel());
+            } else {
+                unfinishedAssessmentResult.setStatus(1); // 设置为已完成
+                unfinishedAssessmentResult.setCompletedTime(LocalDateTime.now());
+
+                assessmentResultMapper.updateById(unfinishedAssessmentResult);
+
+                log.info("[generateAssessmentResult] 测评状态更新成功，ID: {}, 状态已设置为已完成", assessmentResultId);
+            }
 
             return assessmentResultId;
 
