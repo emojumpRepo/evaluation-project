@@ -3,6 +3,8 @@ package cn.iocoder.yudao.module.emojump.controller.app.assessmentresult;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.module.emojump.controller.admin.assessmentresult.vo.GenerateAssessmentResultRespVO;
 import cn.iocoder.yudao.module.emojump.controller.admin.assessmentresult.vo.AssessmentResultRespVO;
+import cn.iocoder.yudao.module.emojump.controller.app.assessmentresult.vo.CheckCompletedReqVO;
+import cn.iocoder.yudao.module.emojump.controller.app.assessmentresult.vo.CheckCompletedRespVO;
 import cn.iocoder.yudao.module.emojump.controller.app.assessmentresult.vo.UserAssessmentRecordsReqVO;
 import cn.iocoder.yudao.module.emojump.controller.app.assessmentresult.vo.UserAssessmentRecordsRespVO;
 import cn.iocoder.yudao.module.emojump.service.assessmentresult.AssessmentResultService;
@@ -104,6 +106,20 @@ public class AppAssessmentResultController {
             UserAssessmentRecordsRespVO emptyResp = new UserAssessmentRecordsRespVO();
             emptyResp.setAssessmentIds(java.util.Collections.emptyList());
             return success(emptyResp);
+        }
+    }
+
+    @PostMapping("/check-completed")
+    @Operation(summary = "检查测评结果是否全部完成")
+    @PermitAll
+    public CommonResult<CheckCompletedRespVO> checkAllAssessmentResultsCompleted(@Valid @RequestBody CheckCompletedReqVO reqVO) {
+        try {
+            Boolean allCompleted = assessmentResultService.checkAllAssessmentResultsCompleted(reqVO.getAssessmentId(), reqVO.getBabyId());
+            return success(new CheckCompletedRespVO(allCompleted));
+        } catch (Exception e) {
+            log.error("[checkAllAssessmentResultsCompleted] 检查测评结果完成状态失败，测评ID: {}, 宝宝ID: {}, 错误: {}", 
+                reqVO.getAssessmentId(), reqVO.getBabyId(), e.getMessage(), e);
+            return success(new CheckCompletedRespVO(false));
         }
     }
 

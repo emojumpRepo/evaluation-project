@@ -32,10 +32,9 @@ public class AssessmentResultController {
     @GetMapping("/get")
     @Operation(summary = "获得测评结果")
     @Parameter(name = "id", description = "编号", required = true, example = "1024")
-    @Parameter(name = "babyId", description = "宝宝编号", required = true, example = "1024")
     @PreAuthorize("@ss.hasPermission('emojump:assessment-result:query')")
-    public CommonResult<AssessmentResultRespVO> getAssessmentResult(@RequestParam("id") Long id, @RequestParam("babyId") Long babyId) {
-        AssessmentResultRespVO assessmentResult = assessmentResultService.getAssessmentResult(id, babyId);
+    public CommonResult<AssessmentResultRespVO> getAssessmentResult(@RequestParam("id") Long id) {
+        AssessmentResultRespVO assessmentResult = assessmentResultService.getAssessmentResult(id);
         return success(assessmentResult);
     }
 
@@ -71,5 +70,7 @@ public class AssessmentResultController {
             return success(respVO);
         }
     }
+
+
 
 }

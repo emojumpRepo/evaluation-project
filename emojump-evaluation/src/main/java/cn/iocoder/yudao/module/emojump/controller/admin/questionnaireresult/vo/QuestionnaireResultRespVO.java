@@ -58,4 +58,12 @@ public class QuestionnaireResultRespVO {
     @Schema(description = "问卷标题", example = "心理健康评估问卷")
     private String questionnaireTitle;
 
+    // 扩展字段：测评标题（用于显示）
+    @Schema(description = "测评标题", example = "心理健康测评")
+    private String assessmentTitle;
+
+    // 扩展字段：宝宝姓名（用于显示）
+    @Schema(description = "宝宝姓名", example = "小明")
+    private String babyName;
+
 }

@@ -45,4 +45,13 @@ public class QuestionnaireResultPageReqVO extends PageParam {
     @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)
     private LocalDateTime[] createTime;
 
+    @Schema(description = "测评标题", example = "心理健康测评")
+    private String assessmentTitle;
+
+    @Schema(description = "宝宝姓名", example = "小明")
+    private String babyName;
+
+    @Schema(description = "问卷标题", example = "心理健康评估问卷")
+    private String questionnaireTitle;
+
 }

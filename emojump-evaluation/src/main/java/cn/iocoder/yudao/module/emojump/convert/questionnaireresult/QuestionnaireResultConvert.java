@@ -12,6 +12,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 问卷结果 Convert
@@ -39,5 +40,53 @@ public interface QuestionnaireResultConvert {
     List<AppQuestionnaireResultListRespVO> convertToListVOList(List<EmoQuestionnaireResultDO> list);
 
     AppQuestionnaireResultVO convertToAppVO(EmoQuestionnaireResultDO bean);
+
+    /**
+     * 转换分页结果并填充关联数据
+     */
+    default PageResult<QuestionnaireResultRespVO> convertPageWithAssociations(PageResult<EmoQuestionnaireResultDO> page, 
+                                                                               Map<Long, String> assessmentTitleMap,
+                                                                               Map<Long, String> babyNameMap,
+                                                                               Map<Long, String> questionnaireTitleMap) {
+        if (page == null) {
+            return null;
+        }
+        
+        List<QuestionnaireResultRespVO> list = convertListWithAssociations(page.getList(), 
+                assessmentTitleMap, babyNameMap, questionnaireTitleMap);
+        return new PageResult<>(list, page.getTotal());
+    }
+
+    /**
+     * 转换列表并填充关联数据
+     */
+    default List<QuestionnaireResultRespVO> convertListWithAssociations(List<EmoQuestionnaireResultDO> list,
+                                                                         Map<Long, String> assessmentTitleMap,
+                                                                         Map<Long, String> babyNameMap,
+                                                                         Map<Long, String> questionnaireTitleMap) {
+        if (list == null) {
+            return null;
+        }
+
+        List<QuestionnaireResultRespVO> result = convertList(list);
+        
+        // 填充关联数据
+        for (int i = 0; i < result.size() && i < list.size(); i++) {
+            QuestionnaireResultRespVO respVO = result.get(i);
+            EmoQuestionnaireResultDO sourceVO = list.get(i);
+            
+            if (sourceVO.getAssessmentId() != null) {
+                respVO.setAssessmentTitle(assessmentTitleMap.get(sourceVO.getAssessmentId()));
+            }
+            if (sourceVO.getBabyId() != null) {
+                respVO.setBabyName(babyNameMap.get(sourceVO.getBabyId()));
+            }
+            if (sourceVO.getQuestionnaireId() != null) {
+                respVO.setQuestionnaireTitle(questionnaireTitleMap.get(sourceVO.getQuestionnaireId()));
+            }
+        }
+        
+        return result;
+    }
 
 }

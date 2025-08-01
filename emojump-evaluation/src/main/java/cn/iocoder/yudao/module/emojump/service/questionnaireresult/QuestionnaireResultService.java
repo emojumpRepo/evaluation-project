@@ -14,6 +14,7 @@ import javax.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 问卷结果 Service 接口
@@ -140,5 +141,12 @@ public interface QuestionnaireResultService {
      * @return 问卷结果
      */
     AppQuestionnaireResultVO getQuestionnaireResultById(Long id);
+
+    /**
+     * 获取关联数据映射
+     * @param list 问卷结果列表
+     * @return 关联数据映射（包含assessmentTitleMap、babyNameMap、questionnaireTitleMap）
+     */
+    Map<String, Map<Long, String>> getAssociationMaps(List<EmoQuestionnaireResultDO> list);
 
 }

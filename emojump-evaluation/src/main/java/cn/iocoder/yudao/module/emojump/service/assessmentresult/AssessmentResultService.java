@@ -27,10 +27,9 @@ public interface AssessmentResultService {
      * 获得测评结果
      *
      * @param id 编号
-     * @param babyId 宝宝编号
      * @return 测评结果
      */
-    AssessmentResultRespVO getAssessmentResult(Long id, Long babyId);
+    AssessmentResultRespVO getAssessmentResult(Long id);
 
     /**
      * 生成测评结果
@@ -66,5 +65,14 @@ public interface AssessmentResultService {
      * @return 用户测评记录
      */
     UserAssessmentRecordsRespVO getUserAssessmentRecords(Long userId);
+
+    /**
+     * 检查指定测评和宝宝的所有测评结果是否都已完成
+     *
+     * @param assessmentId 测评ID
+     * @param babyId 宝宝ID
+     * @return 如果所有测评结果状态都是1(已完成)返回true，否则返回false
+     */
+    Boolean checkAllAssessmentResultsCompleted(Long assessmentId, Long babyId);
 
 }

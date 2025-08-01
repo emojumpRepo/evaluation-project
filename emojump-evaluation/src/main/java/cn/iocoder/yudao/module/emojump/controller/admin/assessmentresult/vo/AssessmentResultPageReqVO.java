@@ -30,4 +30,10 @@ public class AssessmentResultPageReqVO extends PageParam {
     @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)
     private LocalDateTime[] completedTime;
 
+    @Schema(description = "测评标题", example = "入学常规测评")
+    private String assessmentTitle;
+
+    @Schema(description = "宝宝名称", example = "张三")
+    private String babyName;
+
 }

@@ -30,6 +30,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -104,7 +105,19 @@ public class QuestionnaireResultController {
     @PreAuthorize("@ss.hasPermission('emojump:questionnaire-result:query')")
     public CommonResult<PageResult<QuestionnaireResultRespVO>> getQuestionnaireResultPage(@Valid QuestionnaireResultPageReqVO pageVO) {
         PageResult<EmoQuestionnaireResultDO> pageResult = questionnaireResultService.getQuestionnaireResultPage(pageVO);
-        return success(QuestionnaireResultConvert.INSTANCE.convertPage(pageResult));
+        
+        // 获取关联数据映射
+        Map<String, Map<Long, String>> associationMaps = questionnaireResultService.getAssociationMaps(pageResult.getList());
+        
+        // 使用新的转换器方法，填充关联数据
+        PageResult<QuestionnaireResultRespVO> result = QuestionnaireResultConvert.INSTANCE.convertPageWithAssociations(
+                pageResult,
+                associationMaps.get("assessmentTitleMap"),
+                associationMaps.get("babyNameMap"),
+                associationMaps.get("questionnaireTitleMap")
+        );
+        
+        return success(result);
     }
 
     @GetMapping("/export-excel")

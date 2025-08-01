@@ -24,6 +24,7 @@ import cn.iocoder.yudao.module.emojump.dal.dataobject.assessment.AssessmentResul
 import cn.iocoder.yudao.module.emojump.dal.dataobject.assessment.AssessmentDO;
 import cn.iocoder.yudao.module.emojump.dal.dataobject.assessment.AssessmentQuestionnaireDO;
 import cn.iocoder.yudao.module.emojump.dal.dataobject.questionnaire.QuestionnaireDO;
+import cn.iocoder.yudao.module.member.dal.dataobject.baby.MemberBabyDO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -295,7 +296,94 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
 
     @Override
     public PageResult<EmoQuestionnaireResultDO> getQuestionnaireResultPage(QuestionnaireResultPageReqVO pageReqVO) {
-        return emoQuestionnaireResultMapper.selectPage(pageReqVO);
+        // 判断是否需要关联查询
+        boolean needJoinQuery = pageReqVO.getAssessmentTitle() != null || 
+                               pageReqVO.getBabyName() != null || 
+                               pageReqVO.getQuestionnaireTitle() != null;
+        
+        if (needJoinQuery) {
+            // 使用关联查询
+            List<EmoQuestionnaireResultDO> list = emoQuestionnaireResultMapper.selectPageWithJoin(pageReqVO);
+            Long total = emoQuestionnaireResultMapper.selectCountWithJoin(pageReqVO);
+            
+            // 手动分页
+            int pageSize = pageReqVO.getPageSize();
+            int pageNo = pageReqVO.getPageNo();
+            int offset = (pageNo - 1) * pageSize;
+            
+            List<EmoQuestionnaireResultDO> pagedList;
+            if (offset >= list.size()) {
+                pagedList = new ArrayList<>();
+            } else {
+                int endIndex = Math.min(offset + pageSize, list.size());
+                pagedList = list.subList(offset, endIndex);
+            }
+            
+            return new PageResult<>(pagedList, total);
+        } else {
+            // 使用原有查询方式
+            return emoQuestionnaireResultMapper.selectPage(pageReqVO);
+        }
+    }
+    
+    /**
+     * 获取关联数据映射
+     */
+    public Map<String, Map<Long, String>> getAssociationMaps(List<EmoQuestionnaireResultDO> list) {
+        Map<String, Map<Long, String>> result = new HashMap<>();
+        result.put("assessmentTitleMap", new HashMap<>());
+        result.put("babyNameMap", new HashMap<>());
+        result.put("questionnaireTitleMap", new HashMap<>());
+        
+        if (list == null || list.isEmpty()) {
+            return result;
+        }
+        
+        // 收集所有需要查询的ID
+        Set<Long> assessmentIds = new HashSet<>();
+        Set<Long> babyIds = new HashSet<>();
+        Set<Long> questionnaireIds = new HashSet<>();
+        
+        for (EmoQuestionnaireResultDO questionnaireResult : list) {
+            if (questionnaireResult.getAssessmentId() != null) {
+                assessmentIds.add(questionnaireResult.getAssessmentId());
+            }
+            if (questionnaireResult.getBabyId() != null) {
+                babyIds.add(questionnaireResult.getBabyId());
+            }
+            if (questionnaireResult.getQuestionnaireId() != null) {
+                questionnaireIds.add(questionnaireResult.getQuestionnaireId());
+            }
+        }
+        
+        // 批量查询关联数据
+        if (!assessmentIds.isEmpty()) {
+            List<AssessmentDO> assessments = assessmentMapper.selectBatchIds(assessmentIds);
+            Map<Long, String> assessmentTitleMap = assessments.stream()
+                    .collect(Collectors.toMap(AssessmentDO::getId, AssessmentDO::getTitle));
+            result.put("assessmentTitleMap", assessmentTitleMap);
+        }
+        
+        if (!babyIds.isEmpty()) {
+            // 逐个查询宝宝信息（后续可以优化为批量查询）
+            Map<Long, String> babyNameMap = new HashMap<>();
+            for (Long babyId : babyIds) {
+                MemberBabyDO baby = memberBabyService.getBaby(babyId);
+                if (baby != null) {
+                    babyNameMap.put(babyId, baby.getName());
+                }
+            }
+            result.put("babyNameMap", babyNameMap);
+        }
+        
+        if (!questionnaireIds.isEmpty()) {
+            List<QuestionnaireDO> questionnaires = questionnaireMapper.selectBatchIds(questionnaireIds);
+            Map<Long, String> questionnaireTitleMap = questionnaires.stream()
+                    .collect(Collectors.toMap(QuestionnaireDO::getId, QuestionnaireDO::getTitle));
+            result.put("questionnaireTitleMap", questionnaireTitleMap);
+        }
+        
+        return result;
     }
 
     @Override
@@ -504,9 +592,8 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
         Map<Long, String> questionnaireTitleMap = questionnaireMapper.selectBatchIds(allQuestionnaireIds).stream()
                 .collect(Collectors.toMap(QuestionnaireDO::getId, QuestionnaireDO::getTitle));
 
-        // 6. 获取每个 (assessmentId, questionnaireId) 或 (assessmentResultId, questionnaireId) 的最新问卷结果
-        Map<String, EmoQuestionnaireResultDO> latestQuestionnaireResults = new HashMap<>();
-        Map<Long, Map<String, EmoQuestionnaireResultDO>> assessment10SpecificResults = new HashMap<>();
+        // 6. 获取每个 (assessmentResultId, questionnaireId) 的问卷结果
+        Map<Long, Map<String, EmoQuestionnaireResultDO>> assessmentResultSpecificResults = new HashMap<>();
 
         for (Long assessmentId : assessmentIds) {
             List<Long> questionnaireIdsForAssessment = assessmentQuestionnaireMap.get(assessmentId);
@@ -514,37 +601,20 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
                 continue;
             }
 
-            if (assessmentId == 10L) {
-                // 特殊处理 assessmentId 为 10 的情况，其问卷结果与 assessmentResultId 绑定
-                List<AssessmentResultDO> resultsForAssessment10 = assessmentResultsByAssessmentId.get(assessmentId);
-                if (resultsForAssessment10 != null) {
-                    for (AssessmentResultDO ar : resultsForAssessment10) {
-                        Map<String, EmoQuestionnaireResultDO> currentAssessmentResultMap = new HashMap<>();
-                        List<EmoQuestionnaireResultDO> emoResults = emoQuestionnaireResultMapper.selectList(
-                                new LambdaQueryWrapperX<EmoQuestionnaireResultDO>()
-                                        .eq(EmoQuestionnaireResultDO::getAssessmentResultId, ar.getId())
-                                        .in(EmoQuestionnaireResultDO::getQuestionnaireId, questionnaireIdsForAssessment)
-                        );
-                        emoResults.forEach(qr ->
-                                currentAssessmentResultMap.put(ar.getId() + "_" + qr.getQuestionnaireId(), qr)
-                        );
-                        assessment10SpecificResults.put(ar.getId(), currentAssessmentResultMap);
-                    }
-                }
-            } else {
-                // 通用逻辑：获取每个 (assessmentId, questionnaireId) 的最新结果
-                for (Long questionnaireId : questionnaireIdsForAssessment) {
-                    EmoQuestionnaireResultDO latestResult = emoQuestionnaireResultMapper.selectOne(
+            // 统一处理：所有测评的问卷结果都与 assessmentResultId 绑定
+            List<AssessmentResultDO> resultsForAssessment = assessmentResultsByAssessmentId.get(assessmentId);
+            if (resultsForAssessment != null) {
+                for (AssessmentResultDO ar : resultsForAssessment) {
+                    Map<String, EmoQuestionnaireResultDO> currentAssessmentResultMap = new HashMap<>();
+                    List<EmoQuestionnaireResultDO> emoResults = emoQuestionnaireResultMapper.selectList(
                             new LambdaQueryWrapperX<EmoQuestionnaireResultDO>()
-                                    .eq(EmoQuestionnaireResultDO::getBabyId, babyId)
-                                    .eq(EmoQuestionnaireResultDO::getAssessmentId, assessmentId)
-                                    .eq(EmoQuestionnaireResultDO::getQuestionnaireId, questionnaireId)
-                                    .orderByDesc(EmoQuestionnaireResultDO::getCompletedTime)
-                                    .last("LIMIT 1")
+                                    .eq(EmoQuestionnaireResultDO::getAssessmentResultId, ar.getId())
+                                    .in(EmoQuestionnaireResultDO::getQuestionnaireId, questionnaireIdsForAssessment)
                     );
-                    if (latestResult != null) {
-                        latestQuestionnaireResults.put(assessmentId + "_" + questionnaireId, latestResult);
-                    }
+                    emoResults.forEach(qr ->
+                            currentAssessmentResultMap.put(ar.getId() + "_" + qr.getQuestionnaireId(), qr)
+                    );
+                    assessmentResultSpecificResults.put(ar.getId(), currentAssessmentResultMap);
                 }
             }
         }
@@ -569,13 +639,9 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
             if (associatedQuestionnaireIds != null) {
                 for (Long qId : associatedQuestionnaireIds) {
                     EmoQuestionnaireResultDO questionnaireResultDO = null;
-                    if (currentAssessmentId == 10L) {
-                        Map<String, EmoQuestionnaireResultDO> specificResults = assessment10SpecificResults.get(assessmentResult.getId());
-                        if (specificResults != null) {
-                            questionnaireResultDO = specificResults.get(assessmentResult.getId() + "_" + qId);
-                        }
-                    } else {
-                        questionnaireResultDO = latestQuestionnaireResults.get(currentAssessmentId + "_" + qId);
+                    Map<String, EmoQuestionnaireResultDO> specificResults = assessmentResultSpecificResults.get(assessmentResult.getId());
+                    if (specificResults != null) {
+                        questionnaireResultDO = specificResults.get(assessmentResult.getId() + "_" + qId);
                     }
 
                     if (questionnaireResultDO != null) {

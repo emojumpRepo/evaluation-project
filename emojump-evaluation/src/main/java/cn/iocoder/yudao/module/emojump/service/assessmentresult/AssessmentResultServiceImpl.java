@@ -69,36 +69,46 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
 
     @Override
     public PageResult<AssessmentResultRespVO> getAssessmentResultPage(@Valid AssessmentResultPageReqVO pageReqVO) {
+        // 通过关联查询获取分页数据（支持assessmentTitle和babyName查询）
         PageResult<AssessmentResultDO> pageResult = assessmentResultMapper.selectPage(pageReqVO);
         if (org.springframework.util.CollectionUtils.isEmpty(pageResult.getList())) {
             return PageResult.empty();
         }
-        // 拼接数据
+        
+        // 转换为响应对象
         List<AssessmentResultRespVO> respList = AssessmentResultConvert.INSTANCE.convertList(pageResult.getList());
-        // 1. 拼接测评信息
+        
+        // 批量获取测评信息和宝宝信息，补充到响应对象中
+        // 1. 获取测评信息
         List<Long> assessmentIds = CollectionUtils.convertList(respList, AssessmentResultRespVO::getAssessmentId);
-        Map<Long, AssessmentDO> assessmentMap = assessmentMapper.selectBatchIds(assessmentIds).stream().collect(Collectors.toMap(AssessmentDO::getId, a -> a));
-        // 2. 拼接宝宝信息
-        List<Long> babyIds = CollectionUtils.convertList(respList, AssessmentResultRespVO::getBabyId);
-        Map<Long, MemberBabyDO> babyMap = babyIds.stream().distinct().collect(Collectors.toMap(
-            id -> id,
-            id -> memberBabyService.getBaby(id),
-            (a, b) -> a // 合并函数，避免重复key异常
-        ));
+        if (!assessmentIds.isEmpty()) {
+            Map<Long, AssessmentDO> assessmentMap = assessmentMapper.selectBatchIds(assessmentIds)
+                .stream().collect(Collectors.toMap(AssessmentDO::getId, a -> a));
+            
+            // 2. 获取宝宝信息
+            List<Long> babyIds = CollectionUtils.convertList(respList, AssessmentResultRespVO::getBabyId);
+            Map<Long, MemberBabyDO> babyMap = babyIds.stream().distinct().collect(Collectors.toMap(
+                id -> id,
+                id -> memberBabyService.getBaby(id),
+                (a, b) -> a // 合并函数，避免重复key异常
+            ));
 
-        respList.forEach(resp -> {
-            if (assessmentMap.containsKey(resp.getAssessmentId())) {
-                resp.setAssessmentTitle(assessmentMap.get(resp.getAssessmentId()).getTitle());
-            }
-            if (babyMap.containsKey(resp.getBabyId()) && babyMap.get(resp.getBabyId()) != null) {
-                resp.setBabyName(babyMap.get(resp.getBabyId()).getName());
-            }
-        });
+            // 3. 设置测评标题和宝宝名称
+            respList.forEach(resp -> {
+                if (assessmentMap.containsKey(resp.getAssessmentId())) {
+                    resp.setAssessmentTitle(assessmentMap.get(resp.getAssessmentId()).getTitle());
+                }
+                if (babyMap.containsKey(resp.getBabyId()) && babyMap.get(resp.getBabyId()) != null) {
+                    resp.setBabyName(babyMap.get(resp.getBabyId()).getName());
+                }
+            });
+        }
+        
         return new PageResult<>(respList, pageResult.getTotal());
     }
 
     @Override
-    public AssessmentResultRespVO getAssessmentResult(Long id, Long babyId) {
+    public AssessmentResultRespVO getAssessmentResult(Long id) {
         AssessmentResultDO result = assessmentResultMapper.selectById(id);
         if (result == null) {
             throw exception(ASSESSMENT_NOT_EXISTS); // Or a more specific error
@@ -110,10 +120,12 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
         if (assessment != null) {
             respVO.setAssessmentTitle(assessment.getTitle());
         }
-        // 拼接宝宝信息
-        MemberBabyDO baby = memberBabyService.getBaby(babyId);
-        if (baby != null) {
-            respVO.setBabyName(baby.getName());
+        // 拼接宝宝信息（从查询到的测评结果中获取babyId）
+        if (result.getBabyId() != null) {
+            MemberBabyDO baby = memberBabyService.getBaby(result.getBabyId());
+            if (baby != null) {
+                respVO.setBabyName(baby.getName());
+            }
         }
 
         // 拼接问卷结果信息
@@ -459,5 +471,32 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
         respVO.setAssessmentIds(assessmentIds);
         
         return respVO;
+    }
+
+    @Override
+    public Boolean checkAllAssessmentResultsCompleted(Long assessmentId, Long babyId) {
+        log.info("[checkAllAssessmentResultsCompleted] 检查测评结果完成状态，测评ID: {}, 宝宝ID: {}", assessmentId, babyId);
+        
+        // 1. 查询该测评和宝宝的所有测评结果
+        List<AssessmentResultDO> assessmentResults = assessmentResultMapper.selectList(
+            new LambdaQueryWrapperX<AssessmentResultDO>()
+                .eq(AssessmentResultDO::getAssessmentId, assessmentId)
+                .eq(AssessmentResultDO::getBabyId, babyId)
+        );
+        
+        // 2. 如果没有找到任何测评结果，返回false
+        if (assessmentResults == null || assessmentResults.isEmpty()) {
+            log.info("[checkAllAssessmentResultsCompleted] 未找到任何测评结果，测评ID: {}, 宝宝ID: {}", assessmentId, babyId);
+            return false;
+        }
+        
+        // 3. 检查所有测评结果的状态是否都为1（已完成）
+        boolean allCompleted = assessmentResults.stream()
+            .allMatch(result -> result.getStatus() != null && result.getStatus() == 1);
+        
+        log.info("[checkAllAssessmentResultsCompleted] 测评结果完成状态检查结果: {}, 总数: {}, 测评ID: {}, 宝宝ID: {}", 
+            allCompleted, assessmentResults.size(), assessmentId, babyId);
+            
+        return allCompleted;
     }
 }
