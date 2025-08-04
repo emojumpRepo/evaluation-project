@@ -4,13 +4,11 @@ server:
 --- #################### 数据库相关配置 ####################
 
 spring:
-  autoconfigure:
-    exclude:
-      - org.springframework.ai.autoconfigure.vectorstore.qdrant.QdrantVectorStoreAutoConfiguration # 禁用 AI 模块的 Qdrant，手动创建
-      - org.springframework.ai.autoconfigure.vectorstore.milvus.MilvusVectorStoreAutoConfiguration # 禁用 AI 模块的 Milvus，手动创建
   # 数据源配置项
   autoconfigure:
     exclude:
+      # - org.springframework.ai.autoconfigure.vectorstore.qdrant.QdrantVectorStoreAutoConfiguration # 禁用 AI 模块的 Qdrant，手动创建
+      # - org.springframework.ai.autoconfigure.vectorstore.milvus.MilvusVectorStoreAutoConfiguration # 禁用 AI 模块的 Milvus，手动创建
       - com.alibaba.druid.spring.boot.autoconfigure.DruidDataSourceAutoConfigure # 排除 Druid 的自动配置，使用 dynamic-datasource-spring-boot-starter 配置多数据源
   datasource:
     druid: # Druid 【监控】相关的全局配置
@@ -47,18 +45,18 @@ spring:
       primary: master
       datasource:
         master:
-          url: jdbc:mysql://8.130.43.71:3306/ruoyi-vue-pro?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true # MySQL Connector/J 8.X 连接的示例
-          username: emojump
-          password: emojump.888
+          url: jdbc:mysql://127.0.0.1:3306/ruoyi-vue-pro?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true # MySQL Connector/J 8.X 连接的示例
+          username: ruoyi-vue-pro
+          password: dxkr3Wmw5z3S4Cz8
         slave: # 模拟从库，可根据自己需要修改 # 模拟从库，可根据自己需要修改
           lazy: true # 开启懒加载，保证启动速度
-          url: jdbc:mysql://8.130.43.71:3306/ruoyi-vue-pro?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true # MySQL Connector/J 8.X 连接的示例
-          username: emojump
-          password: emojump.888
+          url: jdbc:mysql://127.0.0.1:3306/ruoyi-vue-pro?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true # MySQL Connector/J 8.X 连接的示例
+          username: ruoyi-vue-pro
+          password: dxkr3Wmw5z3S4Cz8
 
   # Redis 配置。Redisson 默认的配置足够使用，一般不需要进行调优
   redis:
-    host: 400-infra.server.iocoder.cn # 地址
+    host: 127.0.0.1 # 地址
     port: 6379 # 端口
     database: 1 # 数据库索引
 #    password: 123456 # 密码，建议生产环境开启
@@ -157,8 +155,8 @@ wx: # 参见 https://github.com/Wechat-Group/WxJava/blob/develop/spring-boot-sta
       key-prefix: wx # Redis Key 的前缀
       http-client-type: HttpClient # 采用 HttpClient 请求微信公众号平台
   miniapp: # 小程序配置（必填），参见 https://github.com/Wechat-Group/WxJava/blob/develop/spring-boot-starters/wx-java-miniapp-spring-boot-starter/README.md 文档
-    appid: wx63c280fe3248a3e7
-    secret: 6f270509224a7ae1296bbf1c8cb97aed
+    appid: wxf37af283b77bdc0d
+    secret: e2c00d0bcf3f01c5b6896a3001a916fe
     config-storage:
       type: RedisTemplate # 采用 RedisTemplate 操作 Redis，会自动从 Spring 中获取
       key-prefix: wa # Redis Key 的前缀
@@ -174,6 +172,17 @@ yudao:
     transfer-notify-url: https://yunai.natapp1.cc/admin-api/pay/notify/transfer # 支付渠道的【转账】回调地址
   demo: false # 开启演示模式
   tencent-lbs-key: TVDBZ-TDILD-4ON4B-PFDZA-RNLKH-VVF6E # QQ 地图的密钥 https://lbs.qq.com/service/staticV2/staticGuide/staticDoc
+  survey-system: # 外部问卷系统配置
+    enabled: true # 是否启用外部问卷系统同步
+    base-url: http://119.29.105.88:8080 # 外部问卷系统基础URL
+    survey-list-path: /api/survey/getSurveyList # 获取问卷列表的API路径
+    update-config-path: /api/survey/updateSimpleConf # 更新问卷配置的API路径
+    publish-survey-path: /api/survey/publishSurvey # 发布问卷的API路径
+    pause-survey-path: /api/survey/pausingSurvey # 暂停问卷的API路径
+    connect-timeout: 5000 # 连接超时时间（毫秒）
+    read-timeout: 10000 # 读取超时时间（毫秒）
+    retry-count: 3 # 重试次数
+    api-key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODkwNmJjZTY3MmI2NzNkZjY1NDM5NDQiLCJ1c2VybmFtZSI6ImFkbWluIiwiaWF0IjoxNzU0Mjk4MDg2fQ.AkBtLMg_mT-pztLkaW8UlGxLhYCDdq3j696Sd2LtRZw" # API密钥（如果需要认证）
 
 justauth:
   enabled: true
