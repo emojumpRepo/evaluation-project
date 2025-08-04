@@ -22,7 +22,7 @@ public class SurveySystemProperties {
     /**
      * 外部问卷系统基础URL
      */
-    private String baseUrl = "http://localhost:8080/api/survey";
+    private String baseUrl = "http://119.29.105.88:8080/api/survey";
 
     /**
      * 获取问卷列表的API路径
@@ -47,7 +47,7 @@ public class SurveySystemProperties {
     /**
      * 获取问卷系统管理员的永久token
      */
-    private String surveyAdminToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODc1ZmQyODI2OThkM2UxZmI5OTI2NjkiLCJ1c2VybmFtZSI6ImFkbWluIiwiaWF0IjoxNzUyODI0MTEzfQ.QubjVJfsMWn_ZDtPSDPJqhFPV5Oj1acs8noa1_WC0JI";
+    private String surveyAdminToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODkwNmJjZTY3MmI2NzNkZjY1NDM5NDQiLCJ1c2VybmFtZSI6ImFkbWluIiwiaWF0IjoxNzU0Mjk4MDg2fQ.AkBtLMg_mT-pztLkaW8UlGxLhYCDdq3j696Sd2LtRZw";
 
     /**
      * 连接超时时间（毫秒）
