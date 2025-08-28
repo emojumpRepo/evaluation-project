@@ -135,7 +135,7 @@ public class DefaultAssessmentResultGenerator extends AbstractAssessmentResultGe
 
     /**
      * 确定发育商评级
-     * 发育商参考范围：＞130为优秀，100-129为良好，80-109为中等，70-79为临界偏低，＜70为智力发育障碍
+     * 发育商参考范围：＞130为优秀，100-129为良好，80-109为中等，70-79为临界偏低，＜70为发育落后
      */
     private String determineDevelopmentLevel(int developmentQuotient) {
         if (developmentQuotient > 130) {
@@ -147,7 +147,7 @@ public class DefaultAssessmentResultGenerator extends AbstractAssessmentResultGe
         } else if (developmentQuotient >= 70) {
             return "临界偏低";
         } else {
-            return "智力发育障碍";
+            return "发育落后";
         }
     }
 
