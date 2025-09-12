@@ -7,6 +7,7 @@ import cn.iocoder.yudao.module.emojump.controller.admin.assessmentresult.vo.Asse
 import cn.iocoder.yudao.module.emojump.controller.admin.assessmentresult.vo.GenerateAssessmentResultReqVO;
 import cn.iocoder.yudao.module.emojump.controller.admin.assessmentresult.vo.GenerateAssessmentResultRespVO;
 import cn.iocoder.yudao.module.emojump.service.assessmentresult.AssessmentResultService;
+import cn.iocoder.yudao.module.emojump.service.assessmentresult.AssessmentResultPdfGenerator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -16,9 +17,12 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.annotation.security.PermitAll;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import java.io.IOException;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
+import static cn.iocoder.yudao.framework.common.util.servlet.ServletUtils.writeAttachment;
 
 @Tag(name = "管理后台 - 测评结果")
 @RestController
@@ -72,5 +76,16 @@ public class AssessmentResultController {
     }
 
 
+
+    @GetMapping("/export-result-pdf")
+    @Operation(summary = "导出测评结果 PDF")
+    @PreAuthorize("@ss.hasPermission('emojump:assessment-result:export')")
+    public void exportAssessmentResultPdf(@RequestParam("assessmentResultId") Long assessmentResultId,
+                                          HttpServletResponse response) throws IOException {
+        AssessmentResultRespVO result = assessmentResultService.getAssessmentResult(assessmentResultId);
+        byte[] pdfBytes = AssessmentResultPdfGenerator.generate(result);
+        String fileName = String.format("测评结果-%s.pdf", assessmentResultId);
+        writeAttachment(response, fileName, pdfBytes);
+    }
 
 }
