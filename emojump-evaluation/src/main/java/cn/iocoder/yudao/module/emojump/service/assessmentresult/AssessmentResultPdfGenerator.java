@@ -383,7 +383,7 @@ public class AssessmentResultPdfGenerator {
 
     /**
      * 加载可显示中文的字体：优先加载类路径 /fonts/NotoSansSC-Regular.otf；
-     * 失败时尝试 Windows 常见中文字体；仍失败则回退英文字体。
+     * 失败时尝试 Windows 常见中文字体；仍失败则抛出异常避免使用不支持中文的字体。
      */
     private static PDFont loadCjkFont(PDDocument document) {
         try {
@@ -393,20 +393,41 @@ public class AssessmentResultPdfGenerator {
             }
         } catch (Exception ignore) {}
 
+        // 扩展Windows中文字体路径列表
         String[] winFonts = {
-            "C:/Windows/Fonts/msyh.ttc",
-            "C:/Windows/Fonts/msyh.ttf",
-            "C:/Windows/Fonts/simhei.ttf",
-            "C:/Windows/Fonts/simsun.ttc",
-            "C:/Windows/Fonts/simsun.ttf"
+            "C:/Windows/Fonts/msyh.ttc",      // 微软雅黑
+            "C:/Windows/Fonts/msyh.ttf",      // 微软雅黑
+            "C:/Windows/Fonts/simhei.ttf",    // 黑体
+            "C:/Windows/Fonts/simsun.ttc",    // 宋体
+            "C:/Windows/Fonts/simsun.ttf",    // 宋体
+            "C:/Windows/Fonts/simkai.ttf",    // 楷体
+            "C:/Windows/Fonts/simfang.ttf",   // 仿宋
+            "C:/Windows/Fonts/Deng.ttf",      // 等线
+            "C:/Windows/Fonts/Dengb.ttf",     // 等线 Bold
+            "C:/Windows/Fonts/STKAITI.TTF",   // 华文楷体
+            "C:/Windows/Fonts/STSONG.TTF",    // 华文宋体
+            "C:/Windows/Fonts/STHEITI.TTF"    // 华文黑体
         };
+        
         for (String path : winFonts) {
             try {
                 java.io.File f = new java.io.File(path);
-                if (f.exists()) return PDType0Font.load(document, f);
+                if (f.exists()) {
+                    PDFont font = PDType0Font.load(document, f);
+                    // 验证字体是否能正确显示中文字符
+                    try {
+                        font.getStringWidth("测试");
+                        return font;
+                    } catch (Exception e) {
+                        // 如果测试失败，继续尝试下一个字体
+                        continue;
+                    }
+                }
             } catch (Exception ignore) {}
         }
-        return PDType1Font.HELVETICA;
+        
+        // 如果所有字体都加载失败，抛出异常而不是使用不支持中文的字体
+        throw new RuntimeException("无法加载支持中文的字体，请确保系统安装了中文字体");
     }
 
     // ========== 渲染上下文与 JSON 数据结构 ==========
