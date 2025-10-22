@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.member.service.baby;
 
 import cn.iocoder.yudao.framework.test.core.ut.BaseDbUnitTest;
 import cn.iocoder.yudao.module.member.controller.admin.baby.vo.babyfile.BabyAssessmentFileCreateReqVO;
+import cn.iocoder.yudao.module.member.controller.admin.baby.vo.babyfile.BabyAssessmentFileUpdateReqVO;
 import cn.iocoder.yudao.module.member.dal.dataobject.baby.BabyAssessmentFileDO;
 import cn.iocoder.yudao.module.member.dal.mysql.baby.BabyAssessmentFileMapper;
 import org.junit.jupiter.api.Test;
