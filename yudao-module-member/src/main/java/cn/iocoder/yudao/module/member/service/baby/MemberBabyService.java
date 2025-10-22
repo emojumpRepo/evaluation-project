@@ -63,4 +63,20 @@ public interface MemberBabyService {
      */
     List<MemberBabyDO> getBabyListByUserId(Long userId);
 
+    /**
+     * 验证宝宝是否存在
+     *
+     * @param id 宝宝ID
+     */
+    void validateBabyExists(Long id);
+
+    /**
+     * 判断用户是否为宝宝的家长
+     *
+     * @param userId 用户ID
+     * @param babyId 宝宝ID
+     * @return 是否为家长
+     */
+    boolean isBabyParent(Long userId, Long babyId);
+
 } 

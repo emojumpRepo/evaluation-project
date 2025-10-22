@@ -23,4 +23,8 @@ public interface FileMapper extends BaseMapperX<FileDO> {
                 .orderByDesc(FileDO::getId));
     }
 
+    default FileDO selectByUrl(String url) {
+        return selectOne(FileDO::getUrl, url);
+    }
+
 }

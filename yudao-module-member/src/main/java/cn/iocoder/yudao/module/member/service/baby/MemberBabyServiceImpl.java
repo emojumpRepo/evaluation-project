@@ -10,8 +10,11 @@ import cn.iocoder.yudao.module.member.convert.baby.MemberBabyConvert;
 import cn.iocoder.yudao.module.member.dal.dataobject.baby.MemberBabyDO;
 import cn.iocoder.yudao.module.member.dal.mysql.baby.MemberBabyMapper;
 import cn.iocoder.yudao.module.member.dal.mysql.user.MemberUserMapper;
+import cn.iocoder.yudao.module.member.enums.ErrorCodeConstants;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
+
+import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 
 import javax.annotation.Resource;
 import java.util.Collection;
@@ -61,7 +64,7 @@ public class MemberBabyServiceImpl implements MemberBabyService {
         babyMapper.deleteById(id);
     }
 
-    private void validateBabyExists(Long id) {
+    public void validateBabyExists(Long id) {
         if (babyMapper.selectById(id) == null) {
             throw exception(BABY_NOT_EXISTS);
         }
@@ -89,6 +92,15 @@ public class MemberBabyServiceImpl implements MemberBabyService {
     @Override
     public List<MemberBabyDO> getBabyListByUserId(Long userId) {
         return babyMapper.selectListByUserId(userId);
+    }
+
+    @Override
+    public boolean isBabyParent(Long userId, Long babyId) {
+        if (userId == null || babyId == null) {
+            return false;
+        }
+        List<MemberBabyDO> babyList = getBabyListByUserId(userId);
+        return babyList.stream().anyMatch(baby -> baby.getId().equals(babyId));
     }
 
 } 

@@ -190,4 +190,14 @@ public class FileServiceImpl implements FileService {
         return client.getContent(path);
     }
 
+    @Override
+    public FileDO getFileByUrl(String url) {
+        return fileMapper.selectByUrl(url);
+    }
+
+    @Override
+    public FileDO getFile(Long id) {
+        return fileMapper.selectById(id);
+    }
+
 }
