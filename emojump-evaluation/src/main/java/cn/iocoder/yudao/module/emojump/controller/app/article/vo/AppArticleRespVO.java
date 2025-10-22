@@ -19,8 +19,8 @@ public class AppArticleRespVO {
     @Schema(description = "文章封面图片URL", example = "https://example.com/cover.jpg")
     private String coverImage;
 
-    @Schema(description = "文章类别", example = "技术文章")
-    private String category;
+    @Schema(description = "文章分类ID", example = "1")
+    private Long categoryId;
 
     @Schema(description = "阅读量", example = "100")
     private Integer viewCount;

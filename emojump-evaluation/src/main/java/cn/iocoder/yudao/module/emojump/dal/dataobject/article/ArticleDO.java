@@ -1,12 +1,9 @@
 package cn.iocoder.yudao.module.emojump.dal.dataobject.article;
 
 import cn.iocoder.yudao.framework.tenant.core.db.TenantBaseDO;
-import com.baomidou.mybatisplus.annotation.KeySequence;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
-
-import java.time.LocalDateTime;
 
 /**
  * 会员文章 DO
@@ -43,9 +40,9 @@ public class ArticleDO extends TenantBaseDO {
     private String coverImage;
 
     /**
-     * 文章类别
+     * 文章分类ID
      */
-    private String category;
+    private Long categoryId;
 
     /**
      * 文章状态

@@ -6,7 +6,14 @@ import cn.iocoder.yudao.module.emojump.controller.admin.questionnaireresult.vo.Q
 import cn.iocoder.yudao.module.emojump.controller.admin.questionnaireresult.vo.QuestionnaireResultUpdateReqVO;
 import cn.iocoder.yudao.module.emojump.dal.dataobject.questionnaireresult.EmoQuestionnaireResultDO;
 import cn.iocoder.yudao.module.emojump.dal.mysql.questionnaireresult.EmoQuestionnaireResultMapper;
+import cn.iocoder.yudao.module.emojump.dal.mysql.assessment.AssessmentMapper;
+import cn.iocoder.yudao.module.emojump.dal.mysql.assessment.AssessmentQuestionnaireMapper;
+import cn.iocoder.yudao.module.emojump.dal.mysql.assessment.AssessmentResultMapper;
+import cn.iocoder.yudao.module.emojump.dal.mysql.questionnaire.QuestionnaireMapper;
+import cn.iocoder.yudao.module.emojump.service.resultgenerator.questionnaire.QuestionnaireResultGeneratorService;
+import cn.iocoder.yudao.module.member.service.baby.MemberBabyService;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 
 import javax.annotation.Resource;
@@ -34,10 +41,33 @@ public class QuestionnaireResultServiceTest extends BaseDbUnitTest {
     @Resource
     private EmoQuestionnaireResultMapper emoQuestionnaireResultMapper;
 
+    @MockBean
+    private MemberBabyService memberBabyService;
+
+    @MockBean
+    private AssessmentMapper assessmentMapper;
+
+    @MockBean
+    private QuestionnaireMapper questionnaireMapper;
+
+    @MockBean
+    private QuestionnaireResultGeneratorService resultGeneratorService;
+
+    @MockBean
+    private AssessmentQuestionnaireMapper assessmentQuestionnaireMapper;
+
+    @MockBean
+    private AssessmentResultMapper assessmentResultMapper;
+
     @Test
     public void testCreateQuestionnaireResult_success() {
         // 准备参数
-        QuestionnaireResultCreateReqVO reqVO = randomPojo(QuestionnaireResultCreateReqVO.class);
+        QuestionnaireResultCreateReqVO reqVO = randomPojo(QuestionnaireResultCreateReqVO.class, o -> {
+            // 设置score为有效值，DECIMAL(10,2)最大值为99999999.99
+            if (o.getScore() != null) {
+                o.setScore(new BigDecimal("50.50"));
+            }
+        });
 
         // 调用
         Long questionnaireResultId = questionnaireResultService.createQuestionnaireResult(reqVO);
@@ -51,11 +81,20 @@ public class QuestionnaireResultServiceTest extends BaseDbUnitTest {
     @Test
     public void testUpdateQuestionnaireResult_success() {
         // mock 数据
-        EmoQuestionnaireResultDO dbQuestionnaireResult = randomPojo(EmoQuestionnaireResultDO.class);
+        EmoQuestionnaireResultDO dbQuestionnaireResult = randomPojo(EmoQuestionnaireResultDO.class, o -> {
+            // 设置score为有效值，DECIMAL(10,2)最大值为99999999.99
+            if (o.getScore() != null) {
+                o.setScore(new BigDecimal("30.00"));
+            }
+        });
         emoQuestionnaireResultMapper.insert(dbQuestionnaireResult);// @Sql: 先插入出一条存在的数据
         // 准备参数
         QuestionnaireResultUpdateReqVO reqVO = randomPojo(QuestionnaireResultUpdateReqVO.class, o -> {
             o.setId(dbQuestionnaireResult.getId()); // 设置更新的 ID
+            // 设置score为有效值
+            if (o.getScore() != null) {
+                o.setScore(new BigDecimal("60.75"));
+            }
         });
 
         // 调用
@@ -68,7 +107,12 @@ public class QuestionnaireResultServiceTest extends BaseDbUnitTest {
     @Test
     public void testDeleteQuestionnaireResult_success() {
         // mock 数据
-        EmoQuestionnaireResultDO dbQuestionnaireResult = randomPojo(EmoQuestionnaireResultDO.class);
+        EmoQuestionnaireResultDO dbQuestionnaireResult = randomPojo(EmoQuestionnaireResultDO.class, o -> {
+            // 设置score为有效值，DECIMAL(10,2)最大值为99999999.99
+            if (o.getScore() != null) {
+                o.setScore(new BigDecimal("40.25"));
+            }
+        });
         emoQuestionnaireResultMapper.insert(dbQuestionnaireResult);// @Sql: 先插入出一条存在的数据
         // 准备参数
         Long id = dbQuestionnaireResult.getId();
@@ -88,6 +132,10 @@ public class QuestionnaireResultServiceTest extends BaseDbUnitTest {
             o.setLevel("良好");
             o.setCompletedTime(LocalDateTime.of(2023, 1, 1, 0, 0, 0));
             o.setCreateTime(LocalDateTime.of(2023, 1, 1, 0, 0, 0));
+            // 设置score为有效值，DECIMAL(10,2)最大值为99999999.99
+            if (o.getScore() != null) {
+                o.setScore(new BigDecimal("75.50"));
+            }
         });
         emoQuestionnaireResultMapper.insert(dbQuestionnaireResult);
         // 测试 assessmentResultId 不匹配
@@ -121,6 +169,10 @@ public class QuestionnaireResultServiceTest extends BaseDbUnitTest {
         // mock 数据
         EmoQuestionnaireResultDO dbQuestionnaireResult = randomPojo(EmoQuestionnaireResultDO.class, o -> {
             o.setAssessmentResultId(1L);
+            // 设置score为有效值，DECIMAL(10,2)最大值为99999999.99
+            if (o.getScore() != null) {
+                o.setScore(new BigDecimal("85.00"));
+            }
         });
         emoQuestionnaireResultMapper.insert(dbQuestionnaireResult);
         // 测试 assessmentResultId 不匹配

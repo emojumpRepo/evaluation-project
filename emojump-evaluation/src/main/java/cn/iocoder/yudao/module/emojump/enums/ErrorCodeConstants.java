@@ -28,4 +28,9 @@ public interface ErrorCodeConstants {
     //========== 会员文章 1-008-003-000 ==========
     ErrorCode ARTICLE_NOT_EXISTS = new ErrorCode(1_008_003_000, "会员文章不存在");
 
+    //========== 文章分类 1-008-004-000 ==========
+    ErrorCode ARTICLE_CATEGORY_NOT_EXISTS = new ErrorCode(1_008_004_000, "文章分类不存在");
+    ErrorCode ARTICLE_CATEGORY_NAME_DUPLICATE = new ErrorCode(1_008_004_001, "文章分类名称已存在");
+    ErrorCode ARTICLE_CATEGORY_HAS_ARTICLES = new ErrorCode(1_008_004_002, "该分类下存在文章，无法删除");
+
 } 

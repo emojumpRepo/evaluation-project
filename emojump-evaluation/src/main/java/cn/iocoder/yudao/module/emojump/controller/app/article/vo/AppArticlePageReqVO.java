@@ -15,7 +15,7 @@ public class AppArticlePageReqVO extends PageParam {
     @Schema(description = "文章标题", example = "Spring Boot")
     private String title;
 
-    @Schema(description = "文章类别", example = "技术文章")
-    private String category;
+    @Schema(description = "文章分类ID", example = "1")
+    private Long categoryId;
 
 } 

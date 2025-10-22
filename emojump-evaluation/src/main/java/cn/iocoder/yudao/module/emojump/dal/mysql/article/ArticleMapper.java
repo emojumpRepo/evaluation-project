@@ -25,7 +25,7 @@ public interface ArticleMapper extends BaseMapperX<ArticleDO> {
     default PageResult<ArticleDO> selectPage(ArticlePageReqVO reqVO) {
         return selectPage(reqVO, new LambdaQueryWrapperX<ArticleDO>()
                 .likeIfPresent(ArticleDO::getTitle, reqVO.getTitle())
-                .eqIfPresent(ArticleDO::getCategory, reqVO.getCategory())
+                .eqIfPresent(ArticleDO::getCategoryId, reqVO.getCategoryId())
                 .eqIfPresent(ArticleDO::getStatus, reqVO.getStatus())
                 .betweenIfPresent(ArticleDO::getCreateTime, reqVO.getCreateTime())
                 .betweenIfPresent(ArticleDO::getPublishTime, reqVO.getPublishTime())
@@ -42,7 +42,7 @@ public interface ArticleMapper extends BaseMapperX<ArticleDO> {
         return selectPage(reqVO, new LambdaQueryWrapperX<ArticleDO>()
                 .eq(ArticleDO::getStatus, 1) // 只查询已发布的文章
                 .likeIfPresent(ArticleDO::getTitle, reqVO.getTitle())
-                .eqIfPresent(ArticleDO::getCategory, reqVO.getCategory())
+                .eqIfPresent(ArticleDO::getCategoryId, reqVO.getCategoryId())
                 .orderByDesc(ArticleDO::getId));
     }
 
