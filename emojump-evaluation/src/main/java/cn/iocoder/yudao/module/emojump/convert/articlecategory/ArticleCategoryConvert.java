@@ -5,6 +5,7 @@ import cn.iocoder.yudao.module.emojump.controller.admin.articlecategory.vo.Artic
 import cn.iocoder.yudao.module.emojump.controller.admin.articlecategory.vo.ArticleCategoryRespVO;
 import cn.iocoder.yudao.module.emojump.controller.admin.articlecategory.vo.ArticleCategorySimpleRespVO;
 import cn.iocoder.yudao.module.emojump.controller.admin.articlecategory.vo.ArticleCategoryUpdateReqVO;
+import cn.iocoder.yudao.module.emojump.controller.app.articlecategory.vo.AppArticleCategoryRespVO;
 import cn.iocoder.yudao.module.emojump.dal.dataobject.article.ArticleCategoryDO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -34,6 +35,8 @@ public interface ArticleCategoryConvert {
     PageResult<ArticleCategoryRespVO> convertPage(PageResult<ArticleCategoryDO> page);
 
     List<ArticleCategorySimpleRespVO> convertSimpleList(List<ArticleCategoryDO> list);
+
+    List<AppArticleCategoryRespVO> convertAppList(List<ArticleCategoryDO> list);
 
 }
 

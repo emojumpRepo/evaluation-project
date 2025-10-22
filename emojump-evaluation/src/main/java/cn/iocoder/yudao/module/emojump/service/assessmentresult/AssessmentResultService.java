@@ -75,4 +75,12 @@ public interface AssessmentResultService {
      */
     Boolean checkAllAssessmentResultsCompleted(Long assessmentId, Long babyId);
 
+    /**
+     * 获取宝宝的所有测评结果
+     *
+     * @param babyId 宝宝ID
+     * @return 所有测评结果列表
+     */
+    List<AssessmentResultRespVO> getAllAssessmentResultsByBabyId(Long babyId);
+
 }

@@ -499,4 +499,37 @@ public class AssessmentResultServiceImpl implements AssessmentResultService {
             
         return allCompleted;
     }
+
+    @Override
+    public List<AssessmentResultRespVO> getAllAssessmentResultsByBabyId(Long babyId) {
+        log.info("[getAllAssessmentResultsByBabyId] 获取宝宝的所有测评结果，宝宝ID: {}", babyId);
+        
+        // 1. 查询该宝宝的所有测评结果
+        List<AssessmentResultDO> assessmentResults = assessmentResultMapper.selectList(
+            new LambdaQueryWrapperX<AssessmentResultDO>()
+                .eq(AssessmentResultDO::getBabyId, babyId)
+                .orderByDesc(AssessmentResultDO::getCompletedTime)
+        );
+        
+        if (assessmentResults == null || assessmentResults.isEmpty()) {
+            log.info("[getAllAssessmentResultsByBabyId] 未找到任何测评结果，宝宝ID: {}", babyId);
+            return Collections.emptyList();
+        }
+        
+        // 2. 转换为响应对象列表并填充详细信息
+        List<AssessmentResultRespVO> resultList = assessmentResults.stream()
+            .map(result -> {
+                try {
+                    return getAssessmentResult(result.getId());
+                } catch (Exception e) {
+                    log.error("[getAllAssessmentResultsByBabyId] 获取测评结果详情失败，ID: {}", result.getId(), e);
+                    return null;
+                }
+            })
+            .filter(resp -> resp != null)
+            .collect(Collectors.toList());
+        
+        log.info("[getAllAssessmentResultsByBabyId] 成功获取 {} 条测评结果", resultList.size());
+        return resultList;
+    }
 }

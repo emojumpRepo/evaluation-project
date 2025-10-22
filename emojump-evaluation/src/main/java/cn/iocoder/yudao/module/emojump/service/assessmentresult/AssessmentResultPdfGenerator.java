@@ -31,6 +31,51 @@ public class AssessmentResultPdfGenerator {
     private static final float PARAGRAPH_GAP = 5f; // 段落间距（加大）
     private static final float CONTENT_INDENT = 12f; // 内容相对于模块标题的统一缩进
 
+    /**
+     * 生成多个测评结果的合并PDF
+     */
+    public static byte[] generateMultiple(List<AssessmentResultRespVO> results) throws IOException {
+        if (results == null || results.isEmpty()) {
+            throw new IllegalArgumentException("测评结果列表不能为空");
+        }
+        
+        try (PDDocument document = new PDDocument(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            PDFont baseFont = loadCjkFont(document);
+            PDFont baseFontBold = baseFont;
+
+            // 为每个测评结果生成一部分内容
+            for (int i = 0; i < results.size(); i++) {
+                AssessmentResultRespVO result = results.get(i);
+                RenderContext ctx = new RenderContext(document, baseFont, baseFontBold);
+                ctx.newPage();
+
+                // 添加封面标识
+                if (i == 0) {
+                    drawCenteredTitle(ctx, 24f, "宝宝测评报告合集");
+                    ctx.y -= BLOCK_SPACING;
+                    drawCenteredTitle(ctx, 14f, "共 " + results.size() + " 份测评报告");
+                    ctx.y -= BLOCK_SPACING * 2;
+                }
+
+                // 标题（带序号）
+                drawCenteredTitle(ctx, 20f, "测评报告 " + (i + 1) + "/" + results.size());
+                ctx.y -= BLOCK_SPACING;
+
+                // 渲染单个测评报告内容
+                renderSingleResult(ctx, result);
+
+                // 关闭当前内容流
+                ctx.closeContent();
+            }
+
+            // 绘制页脚页码
+            drawFooterPageNumber(document, 1);
+
+            document.save(out);
+            return out.toByteArray();
+        }
+    }
+
     public static byte[] generate(AssessmentResultRespVO result) throws IOException {
         try (PDDocument document = new PDDocument(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             PDFont baseFont = loadCjkFont(document);
@@ -40,109 +85,120 @@ public class AssessmentResultPdfGenerator {
             ctx.newPage();
 
             // 标题
-            drawCenteredTitle(ctx, 20f, "测评报告");
+            drawCenteredTitle(ctx, 20f, "Assessment Report / 测评报告");
             ctx.y -= BLOCK_SPACING;
-
-            // 基本信息
-            drawKeyValue(ctx, 12f, "测评标题", nvl(result.getAssessmentTitle()));
-            drawKeyValue(ctx, 12f, "宝宝", nvl(result.getBabyName()) + "  (ID: " + nvl(result.getBabyId()) + ")");
-            if (result.getCompletedTime() != null) {
-                drawKeyValue(ctx, 12f, "完成时间", result.getCompletedTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
-            }
-            drawDivider(ctx);
-            ctx.y -= BLOCK_SPACING;
-
-            // 总体结论（若有分数和等级）
-            if (result.getOverallScore() != null || result.getOverallLevel() != null) {
-                drawSectionHeader(ctx, 14f, "总体结论");
-                if (result.getOverallScore() != null) {
-                    drawParagraph(ctx, 12f, "总体得分: " + result.getOverallScore());
-                }
-                if (result.getOverallLevel() != null) {
-                    drawParagraph(ctx, 12f, "总体评级: " + result.getOverallLevel());
-                }
-                ctx.y -= BLOCK_SPACING;
-            }
-
-            // 从 JSON 渲染结构化报告
-            OverallReport report = null;
-            if (result.getOverallReport() != null && !result.getOverallReport().isEmpty()) {
-                try {
-                    report = JsonUtils.parseObject(result.getOverallReport(), OverallReport.class);
-                } catch (Exception ignore) {
-                    // 解析失败则原样输出
-                }
-            }
-
-            if (report != null) {
-                // 发展商概览
-                if (report.developmentQuotient != null) {
-                    drawSectionHeader(ctx, 14f, "发展商概览");
-                    DevelopmentQuotient dq = report.developmentQuotient;
-                    if (dq.description != null) {
-                        drawWrappedText(ctx, 12f, dq.description, CONTENT_WIDTH);
-                    }
-                    drawInfoCard(ctx, new String[][]{
-                            {"发育商", nvl(dq.value)},
-                            {"等级", nvl(dq.level)},
-                            {"心理年龄(月)", nvl(dq.mentalAge)},
-                            {"实际年龄(月)", nvl(dq.actualAge)}
-                    });
-                    ctx.y -= BLOCK_SPACING;
-                }
-
-                // 问卷得分表
-                if (report.questionnaireScores != null && !report.questionnaireScores.isEmpty()) {
-                    drawSectionHeader(ctx, 14f, "问卷得分");
-                    float[] colWidths = new float[]{CONTENT_WIDTH * 0.7f, CONTENT_WIDTH * 0.3f};
-                    drawTableHeader(ctx, 13f, new String[]{"问卷", "分数"}, colWidths);
-                    int rowIdx = 0;
-                    for (QuestionnaireScore qs : report.questionnaireScores) {
-                        drawTableRow(ctx, 12f, new String[]{nvl(qs.questionnaireName), nvl(qs.score)}, colWidths, rowIdx++);
-                    }
-                    ctx.y -= BLOCK_SPACING;
-                }
-
-                // 建议
-                if (report.advice != null) {
-                    drawSectionHeader(ctx, 14f, "建议");
-                    if (report.advice.description != null) {
-                        drawWrappedText(ctx, 12f, report.advice.description, CONTENT_WIDTH);
-                    }
-                    if (report.advice.content != null && !report.advice.content.isEmpty()) {
-                        for (String c : report.advice.content) {
-                            drawBullet(ctx, 12f, c);
-                        }
-                    }
-                    ctx.y -= BLOCK_SPACING;
-                }
-            } else if (result.getOverallReport() != null && !result.getOverallReport().isEmpty()) {
-                // 无法解析则作为原始文本输出
-                drawSectionHeader(ctx, 14f, "总体报告");
-                drawWrappedText(ctx, 12f, result.getOverallReport(), CONTENT_WIDTH);
-                ctx.y -= BLOCK_SPACING;
-            }
-
-            // 如未提供 JSON 的问卷明细，则退回使用问卷列表
-            List<QuestionnaireResultRespVO> list = result.getQuestionnaireResults();
-            if ((report == null || report.questionnaireScores == null || report.questionnaireScores.isEmpty())
-                    && list != null && !list.isEmpty()) {
-                drawSectionHeader(ctx, 14f, "问卷得分");
-                float[] colWidths = new float[]{CONTENT_WIDTH * 0.7f, CONTENT_WIDTH * 0.3f};
-                drawTableHeader(ctx, 13f, new String[]{"问卷", "分数"}, colWidths);
-                int rowIdx = 0;
-                for (QuestionnaireResultRespVO qr : list) {
-                    drawTableRow(ctx, 12f, new String[]{nvl(qr.getQuestionnaireTitle()), nvl(qr.getScore())}, colWidths, rowIdx++);
-                }
-                ctx.y -= BLOCK_SPACING;
-            }
-
+            
+            // 渲染报告内容
+            renderSingleResult(ctx, result);
+            
             // 关闭主流并绘制页脚
             ctx.closeContent();
             drawFooterPageNumber(document, 1);
 
             document.save(out);
             return out.toByteArray();
+        } catch (Exception e) {
+            // 如果生成失败，记录错误并抛出更明确的异常
+            throw new IOException("PDF生成失败: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 渲染单个测评结果的内容
+     */
+    private static void renderSingleResult(RenderContext ctx, AssessmentResultRespVO result) throws IOException {
+        // 基本信息
+        drawKeyValue(ctx, 12f, "测评标题", nvl(result.getAssessmentTitle()));
+        drawKeyValue(ctx, 12f, "宝宝", nvl(result.getBabyName()) + "  (ID: " + nvl(result.getBabyId()) + ")");
+        if (result.getCompletedTime() != null) {
+            drawKeyValue(ctx, 12f, "完成时间", result.getCompletedTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
+        }
+        drawDivider(ctx);
+        ctx.y -= BLOCK_SPACING;
+
+        // 总体结论（若有分数和等级）
+        if (result.getOverallScore() != null || result.getOverallLevel() != null) {
+            drawSectionHeader(ctx, 14f, "总体结论");
+            if (result.getOverallScore() != null) {
+                drawParagraph(ctx, 12f, "总体得分: " + result.getOverallScore());
+            }
+            if (result.getOverallLevel() != null) {
+                drawParagraph(ctx, 12f, "总体评级: " + result.getOverallLevel());
+            }
+            ctx.y -= BLOCK_SPACING;
+        }
+
+        // 从 JSON 渲染结构化报告
+        OverallReport report = null;
+        if (result.getOverallReport() != null && !result.getOverallReport().isEmpty()) {
+            try {
+                report = JsonUtils.parseObject(result.getOverallReport(), OverallReport.class);
+            } catch (Exception ignore) {
+                // 解析失败则原样输出
+            }
+        }
+
+        if (report != null) {
+            // 发展商概览
+            if (report.developmentQuotient != null) {
+                drawSectionHeader(ctx, 14f, "发展商概览");
+                DevelopmentQuotient dq = report.developmentQuotient;
+                if (dq.description != null) {
+                    drawWrappedText(ctx, 12f, dq.description, CONTENT_WIDTH);
+                }
+                drawInfoCard(ctx, new String[][]{
+                        {"发育商", nvl(dq.value)},
+                        {"等级", nvl(dq.level)},
+                        {"心理年龄(月)", nvl(dq.mentalAge)},
+                        {"实际年龄(月)", nvl(dq.actualAge)}
+                });
+                ctx.y -= BLOCK_SPACING;
+            }
+
+            // 问卷得分表
+            if (report.questionnaireScores != null && !report.questionnaireScores.isEmpty()) {
+                drawSectionHeader(ctx, 14f, "问卷得分");
+                float[] colWidths = new float[]{CONTENT_WIDTH * 0.7f, CONTENT_WIDTH * 0.3f};
+                drawTableHeader(ctx, 13f, new String[]{"问卷", "分数"}, colWidths);
+                int rowIdx = 0;
+                for (QuestionnaireScore qs : report.questionnaireScores) {
+                    drawTableRow(ctx, 12f, new String[]{nvl(qs.questionnaireName), nvl(qs.score)}, colWidths, rowIdx++);
+                }
+                ctx.y -= BLOCK_SPACING;
+            }
+
+            // 建议
+            if (report.advice != null) {
+                drawSectionHeader(ctx, 14f, "建议");
+                if (report.advice.description != null) {
+                    drawWrappedText(ctx, 12f, report.advice.description, CONTENT_WIDTH);
+                }
+                if (report.advice.content != null && !report.advice.content.isEmpty()) {
+                    for (String c : report.advice.content) {
+                        drawBullet(ctx, 12f, c);
+                    }
+                }
+                ctx.y -= BLOCK_SPACING;
+            }
+        } else if (result.getOverallReport() != null && !result.getOverallReport().isEmpty()) {
+            // 无法解析则作为原始文本输出
+            drawSectionHeader(ctx, 14f, "总体报告");
+            drawWrappedText(ctx, 12f, result.getOverallReport(), CONTENT_WIDTH);
+            ctx.y -= BLOCK_SPACING;
+        }
+
+        // 如未提供 JSON 的问卷明细，则退回使用问卷列表
+        List<QuestionnaireResultRespVO> list = result.getQuestionnaireResults();
+        if ((report == null || report.questionnaireScores == null || report.questionnaireScores.isEmpty())
+                && list != null && !list.isEmpty()) {
+            drawSectionHeader(ctx, 14f, "问卷得分");
+            float[] colWidths = new float[]{CONTENT_WIDTH * 0.7f, CONTENT_WIDTH * 0.3f};
+            drawTableHeader(ctx, 13f, new String[]{"问卷", "分数"}, colWidths);
+            int rowIdx = 0;
+            for (QuestionnaireResultRespVO qr : list) {
+                drawTableRow(ctx, 12f, new String[]{nvl(qr.getQuestionnaireTitle()), nvl(qr.getScore())}, colWidths, rowIdx++);
+            }
+            ctx.y -= BLOCK_SPACING;
         }
     }
 

@@ -7,7 +7,10 @@ import cn.iocoder.yudao.module.emojump.controller.app.assessmentresult.vo.CheckC
 import cn.iocoder.yudao.module.emojump.controller.app.assessmentresult.vo.CheckCompletedRespVO;
 import cn.iocoder.yudao.module.emojump.controller.app.assessmentresult.vo.UserAssessmentRecordsReqVO;
 import cn.iocoder.yudao.module.emojump.controller.app.assessmentresult.vo.UserAssessmentRecordsRespVO;
+import cn.iocoder.yudao.module.emojump.controller.app.assessmentresult.vo.AssessmentExportReqVO;
+import cn.iocoder.yudao.module.emojump.controller.app.assessmentresult.vo.AssessmentExportRespVO;
 import cn.iocoder.yudao.module.emojump.service.assessmentresult.AssessmentResultService;
+import cn.iocoder.yudao.module.emojump.service.assessmentexport.AssessmentExportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +31,9 @@ public class AppAssessmentResultController {
 
     @Resource
     private AssessmentResultService assessmentResultService;
+
+    @Resource
+    private AssessmentExportService assessmentExportService;
 
     @GetMapping("/generate-result")
     @Operation(summary = "生成测评结果")
@@ -90,6 +96,23 @@ public class AppAssessmentResultController {
         }
     }
 
+    @GetMapping("/list-by-baby")
+    @Operation(summary = "获取宝宝的所有测评结果列表")
+    @PermitAll
+    public CommonResult<java.util.List<AssessmentResultRespVO>> getAllAssessmentResultsByBabyId(@RequestParam("babyId") Long babyId) {
+        try {
+            // 调用服务获取宝宝的所有测评结果
+            java.util.List<AssessmentResultRespVO> resultList = assessmentResultService.getAllAssessmentResultsByBabyId(babyId);
+            
+            return success(resultList);
+            
+        } catch (Exception e) {
+            log.error("[getAllAssessmentResultsByBabyId] 获取宝宝测评结果列表失败，宝宝ID: {}, 错误: {}", 
+                babyId, e.getMessage(), e);
+            return success(java.util.Collections.emptyList());
+        }
+    }
+
     @PostMapping("/user-assessment-records")
     @Operation(summary = "查询用户测评记录")
     public CommonResult<UserAssessmentRecordsRespVO> getUserAssessmentRecords(@Valid @RequestBody UserAssessmentRecordsReqVO reqVO) {
@@ -117,9 +140,43 @@ public class AppAssessmentResultController {
             Boolean allCompleted = assessmentResultService.checkAllAssessmentResultsCompleted(reqVO.getAssessmentId(), reqVO.getBabyId());
             return success(new CheckCompletedRespVO(allCompleted));
         } catch (Exception e) {
-            log.error("[checkAllAssessmentResultsCompleted] 检查测评结果完成状态失败，测评ID: {}, 宝宝ID: {}, 错误: {}", 
+            log.error("[checkAllAssessmentResultsCompleted] 检查测评结果完成状态失败，测评ID: {}, 宝宝ID: {}, 错误: {}",
                 reqVO.getAssessmentId(), reqVO.getBabyId(), e.getMessage(), e);
             return success(new CheckCompletedRespVO(false));
+        }
+    }
+
+    // ========== 导出功能相关 ==========
+
+    @PostMapping("/export")
+    @Operation(summary = "导出测评报告")
+    public CommonResult<AssessmentExportRespVO> exportAssessmentReport(@Valid @RequestBody AssessmentExportReqVO exportReqVO) {
+        try {
+            AssessmentExportRespVO respVO = assessmentExportService.exportAssessmentReport(exportReqVO);
+            return success(respVO);
+        } catch (Exception e) {
+            log.error("[exportAssessmentReport] 导出测评报告失败，assessmentId: {}, babyId: {}, exportType: {}, 错误: {}",
+                exportReqVO.getAssessmentId(), exportReqVO.getBabyId(), exportReqVO.getExportType(), e.getMessage(), e);
+
+            AssessmentExportRespVO errorResp = new AssessmentExportRespVO();
+            errorResp.setStatus(AssessmentExportRespVO.ExportStatus.FAILED);
+            return success(errorResp);
+        }
+    }
+
+    @GetMapping("/export/status")
+    @Operation(summary = "获取导出状态")
+    public CommonResult<AssessmentExportRespVO> getExportStatus(@RequestParam("taskId") String taskId) {
+        try {
+            AssessmentExportRespVO respVO = assessmentExportService.getExportStatus(taskId);
+            return success(respVO);
+        } catch (Exception e) {
+            log.error("[getExportStatus] 获取导出状态失败，taskId: {}, 错误: {}", taskId, e.getMessage(), e);
+
+            AssessmentExportRespVO errorResp = new AssessmentExportRespVO();
+            errorResp.setExportTaskId(taskId);
+            errorResp.setStatus(AssessmentExportRespVO.ExportStatus.FAILED);
+            return success(errorResp);
         }
     }
 
