@@ -145,9 +145,9 @@ public class QuestionnaireResultServiceTest extends BaseDbUnitTest {
         // 测试 level 不匹配
         emoQuestionnaireResultMapper.insert(cloneIgnoreId(dbQuestionnaireResult, o -> o.setLevel("优秀")));
         // 测试 completedTime 不匹配
-        emoQuestionnaireResultMapper.insert(cloneIgnoreId(dbQuestionnaireResult, o -> o.setCompletedTime(LocalDateTime.of(2023, 2, 1, 0, 0, 0))));
+        emoQuestionnaireResultMapper.insert(cloneIgnoreId(dbQuestionnaireResult, o -> o.setCompletedTime(LocalDateTime.of(2023, 3, 1, 0, 0, 0))));
         // 测试 createTime 不匹配
-        emoQuestionnaireResultMapper.insert(cloneIgnoreId(dbQuestionnaireResult, o -> o.setCreateTime(LocalDateTime.of(2023, 2, 1, 0, 0, 0))));
+        emoQuestionnaireResultMapper.insert(cloneIgnoreId(dbQuestionnaireResult, o -> o.setCreateTime(LocalDateTime.of(2023, 3, 1, 0, 0, 0))));
         // 准备参数
         QuestionnaireResultPageReqVO reqVO = new QuestionnaireResultPageReqVO();
         reqVO.setAssessmentResultId(1L);
@@ -161,7 +161,8 @@ public class QuestionnaireResultServiceTest extends BaseDbUnitTest {
         // 断言
         assertEquals(1, pageResult.getTotal());
         assertEquals(1, pageResult.getList().size());
-        assertPojoEquals(dbQuestionnaireResult, pageResult.getList().get(0));
+        // 忽略 creator 字段的比较，因为 BaseDO 会自动填充
+        assertPojoEquals(dbQuestionnaireResult, pageResult.getList().get(0), "creator");
     }
 
     @Test
@@ -182,7 +183,8 @@ public class QuestionnaireResultServiceTest extends BaseDbUnitTest {
         List<EmoQuestionnaireResultDO> list = questionnaireResultService.getQuestionnaireResultListByAssessmentResultId(1L);
         // 断言
         assertEquals(1, list.size());
-        assertPojoEquals(dbQuestionnaireResult, list.get(0));
+        // 忽略 creator 字段的比较，因为 BaseDO 会自动填充
+        assertPojoEquals(dbQuestionnaireResult, list.get(0), "creator");
     }
 
 }

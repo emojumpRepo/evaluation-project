@@ -80,14 +80,4 @@ public class EmoQuestionnaireResultDO extends BaseDO {
      */
     private LocalDateTime completedTime;
 
-    /**
-     * 创建者
-     */
-    private String creator;
-
-    /**
-     * 更新者
-     */
-    private String updater;
-
 }
