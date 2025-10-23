@@ -484,16 +484,15 @@ public class QuestionnaireResultServiceImpl implements QuestionnaireResultServic
             );
             Long assessmentResultId = unfinishedAssessmentResult != null ? unfinishedAssessmentResult.getId() : null;
             // 创建问卷结果记录
-            EmoQuestionnaireResultDO questionnaireResult = EmoQuestionnaireResultDO.builder()
-                    .assessmentId(assessmentId)
-                    .assessmentResultId(assessmentResultId)
-                    .babyId(userId) // 使用userId作为babyId
-                    .questionnaireId(questionnaireId)
-                    .answerData(processedAnswerData) // 存储处理后的答案数据
-                    .completedTime(submitReqVO.getCompletedTime())
-                    .creator(String.valueOf(userId))
-                    .updater(String.valueOf(userId))
-                    .build();
+            EmoQuestionnaireResultDO questionnaireResult = new EmoQuestionnaireResultDO();
+            questionnaireResult.setAssessmentId(assessmentId);
+            questionnaireResult.setAssessmentResultId(assessmentResultId);
+            questionnaireResult.setBabyId(userId); // 使用userId作为babyId
+            questionnaireResult.setQuestionnaireId(questionnaireId);
+            questionnaireResult.setAnswerData(processedAnswerData); // 存储处理后的答案数据
+            questionnaireResult.setCompletedTime(submitReqVO.getCompletedTime());
+            questionnaireResult.setCreator(String.valueOf(userId));
+            questionnaireResult.setUpdater(String.valueOf(userId));
 
             // 插入数据库
             emoQuestionnaireResultMapper.insert(questionnaireResult);
