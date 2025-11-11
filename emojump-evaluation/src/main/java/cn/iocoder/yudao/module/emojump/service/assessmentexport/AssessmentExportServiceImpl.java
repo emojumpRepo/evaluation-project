@@ -387,18 +387,40 @@ public class AssessmentExportServiceImpl implements AssessmentExportService {
      */
     private byte[] getFileContent(BabyAssessmentFileDO file) {
         try {
-            // 根据文件ID从文件服务获取内容
-            // TODO: 需要根据实际的 FileService 实现来获取文件内容
-            // 这里假设文件存储在配置的路径中
-            if (file.getFileId() != null) {
-                // 暂时返回空，等待实际实现
-                log.warn("[getFileContent] 文件内容获取功能待实现，fileId: {}", file.getFileId());
+            if (file.getFileId() == null) {
+                log.warn("[getFileContent] 文件ID为空，fileName: {}", file.getFileName());
                 return new byte[0];
             }
-            return new byte[0];
+
+            log.info("[getFileContent] 开始获取文件内容，fileId: {}, fileName: {}",
+                file.getFileId(), file.getFileName());
+
+            // 1. 根据文件ID获取FileDO
+            cn.iocoder.yudao.module.infra.dal.dataobject.file.FileDO fileDO = fileService.getFile(file.getFileId());
+            if (fileDO == null) {
+                log.warn("[getFileContent] 未找到文件记录，fileId: {}", file.getFileId());
+                return new byte[0];
+            }
+
+            log.info("[getFileContent] 找到文件记录，configId: {}, path: {}, size: {}",
+                fileDO.getConfigId(), fileDO.getPath(), fileDO.getSize());
+
+            // 2. 使用FileService获取文件内容
+            byte[] content = fileService.getFileContent(fileDO.getConfigId(), fileDO.getPath());
+
+            if (content == null || content.length == 0) {
+                log.warn("[getFileContent] 文件内容为空，fileId: {}, fileName: {}",
+                    file.getFileId(), file.getFileName());
+                return new byte[0];
+            }
+
+            log.info("[getFileContent] 文件内容获取成功，fileId: {}, size: {} bytes",
+                file.getFileId(), content.length);
+            return content;
+
         } catch (Exception e) {
-            log.error("[getFileContent] 获取文件内容失败，fileId: {}, error: {}", 
-                file.getFileId(), e.getMessage(), e);
+            log.error("[getFileContent] 获取文件内容失败，fileId: {}, fileName: {}, error: {}",
+                file.getFileId(), file.getFileName(), e.getMessage(), e);
             return new byte[0];
         }
     }
